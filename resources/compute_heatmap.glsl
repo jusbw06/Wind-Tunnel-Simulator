@@ -50,7 +50,7 @@ void main(){
 	vec4 pixel = imageLoad(img_input, pixel_coords);
 
 	// black screen on working ssbo
-	if ( isWall(pixel_coords) ){
+	if ( isWall(pixel_coords) == 1){
 		pixel = vec4(0);
 	}else{
 	

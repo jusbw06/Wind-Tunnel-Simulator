@@ -53,5 +53,11 @@
     <None Include="..\resources\compute_vort.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\resources\compute_heatmap.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\resources\compute_particle.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
