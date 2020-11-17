@@ -25,7 +25,7 @@ using namespace glm;
 #define RESY 1080
 
 
-shared_ptr<Shape> shape;
+shared_ptr<Shape> sphere;
 std::vector<float> bufInstance(RESX * RESY * 4);
 std::vector<unsigned char> buffer(RESX * RESY * 4);
 std::vector<unsigned char> buffer2(RESX * RESY * 4);
@@ -33,6 +33,7 @@ std::vector<unsigned char> buffer2(RESX * RESY * 4);
 GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram;
 
 #define ARRAY_LEN 100
+#define NUM_SPHERE 100
 
 class ssbo_data
 {
@@ -58,6 +59,48 @@ double get_last_elapsed_time()
 	return difference;
 }
 
+class Camera
+{
+public:
+	glm::vec3 pos, rot;
+	int w, a, s, d;
+	Camera()
+	{
+		w = a = s = d = 0;
+		pos = rot = glm::vec3(0, 0, 0);
+	}
+	glm::mat4 process(double ftime)
+	{
+		float speed = 0;
+		if (w == 1)
+		{
+			speed = 10 * ftime;
+		}
+		else if (s == 1)
+		{
+			speed = -10 * ftime;
+		}
+		float yangle = 0;
+		if (a == 1)
+			yangle = -3 * ftime;
+		else if (d == 1)
+			yangle = 3 * ftime;
+		rot.y += yangle;
+		glm::mat4 R = glm::rotate(glm::mat4(1), rot.y, glm::vec3(0, 1, 0));
+		glm::vec4 dir = glm::vec4(0, 0, speed, 1);
+		dir = dir * R;
+		pos += glm::vec3(dir.x, dir.y, dir.z);
+		glm::mat4 T = glm::translate(glm::mat4(1), pos);
+		return R * T;
+	}
+};
+
+
+class Object {
+	public:
+		vec4 position[NUM_SPHERE];
+		vec3 velocity[NUM_SPHERE];
+};
 
 class Application : public EventCallbacks
 {
@@ -68,6 +111,7 @@ public:
 
 	// Our shader program
 	std::shared_ptr<Program> postproc;
+	std::shared_ptr<Program> prog;
 
 	// Contains vertex information for OpenGL
 	GLuint VertexArrayID, VertexArrayIDScreen;
@@ -83,6 +127,9 @@ public:
 	ssbo_data ssbo;
 
 	int tex_w, tex_h;
+	GLuint SphereTexture;
+	Camera camera;
+	Object sphereObj;
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
@@ -146,6 +193,13 @@ public:
 	{
 
 		string resourceDirectory = "../resources";
+
+
+		// load in sphere 
+		sphere = make_shared<Shape>();
+		sphere->loadMesh(resourceDirectory + "/sphere.obj");
+		sphere->resize();
+		sphere->init();
 	
 
 		//screen plane
@@ -192,7 +246,7 @@ public:
 	
 
 		int width, height, channels;
-		char filepath[1000];
+		
 
 		//texture 1
 	
@@ -253,9 +307,42 @@ public:
 		glBindImageTexture(1, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 		
 		stbi_image_free(temp);
+
+		// load in sphere texture
+		char filepath[1000];
+		string img = resourceDirectory + "/Winslow_nebula.jpg";
+		strcpy(filepath, img.c_str());
+		unsigned char* data = stbi_load(filepath, &width, &height, &channels, 4);
+		glGenTextures(1, &SphereTexture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, SphereTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		GLuint l1 = glGetUniformLocation(prog->pid, "tex");//tex, tex2... sampler in the fragment shader
+		GLuint l2 = glGetUniformLocation(prog->pid, "tex2");
+		// Then bind the uniform samplers to texture units:
+		glUseProgram(prog->pid);
+		glUniform1i(l1, 0);
+		glUniform1i(l2, 1);
+
+
+		// init sphere objs
+		for (int i = 0; i < NUM_SPHERE; i++) {
+			sphereObj.position[i] = vec4(rand() % 8 - 4, rand() % 8 - 4, -(rand() % 10 + 15), 0.1);
+			sphereObj.velocity[i] = vec4(0, -1 * randf(), 0, 1);
+		}
+
 	}
 
-
+	float randf(float shift = 0)
+	{
+		return (float)(rand() / (float)RAND_MAX) + shift;
+	}
 	void createComputeShader(GLuint* compute_program, std::string filename) {
 
 		std::string full_path = "../resources/" + filename + ".glsl";
@@ -308,6 +395,27 @@ public:
 		}
 		postproc->addAttribute("vertPos");
 		postproc->addAttribute("vertTex");
+
+
+
+		// init prog for spheres
+		prog = std::make_shared<Program>();
+		prog->setVerbose(true);
+		prog->setShaderNames(resourceDirectory + "/shader_vertex.glsl", resourceDirectory + "/shader_fragment.glsl");
+		if (!prog->init())
+		{
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
+		prog->addUniform("P");
+		prog->addUniform("V");
+		prog->addUniform("M");
+		prog->addUniform("campos");
+		prog->addAttribute("vertPos");
+		prog->addAttribute("vertNor");
+		prog->addAttribute("vertTex");
+
+
 
 		//load the compute shader
 		createComputeShader( &computeGridProgram, "compute_grid");
@@ -376,6 +484,13 @@ public:
 			return flap;
 
 	}
+
+	void update(int i, float delta_t) {
+		sphereObj.position[i].x += sphereObj.velocity[i].x * delta_t;
+		sphereObj.position[i].y += sphereObj.velocity[i].y * delta_t;
+		sphereObj.position[i].z += sphereObj.velocity[i].z * delta_t;
+	}
+
 	//*****************************************************************************************
 	void render(int texnum){
 		// Get current frame buffer size.
@@ -395,6 +510,46 @@ public:
 		glBindVertexArray(VertexArrayIDScreen);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		postproc->unbind();
+
+
+		glViewport(0, 0, width, height);
+
+		// Clear framebuffer.
+		glClearColor(0.8f, 0.8f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+		// render spheres
+		glm::mat4 V = glm::mat4(1), M = glm::mat4(1), P;
+
+		P = glm::perspective((float)(3.14159 / 4.), (float)((float)width / (float)height), 0.1f, 1000.0f);
+
+		prog->bind();
+		
+		glm::mat4 TransZ;
+		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.1));
+
+		float frametime = get_last_elapsed_time();
+
+		for (int i = 0; i < NUM_SPHERE; i++) {
+			update(i, frametime);
+
+			vec3 pos = sphereObj.position[i];
+			TransZ = glm::translate(glm::mat4(1.0f), pos);
+			M = TransZ * S;
+
+			V = camera.process(frametime);
+			//send the matrices to the shaders
+			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+			glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+			glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+			glUniform3fv(prog->getUniform("campos"), 1, &camera.pos[0]);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, SphereTexture);
+			sphere->draw(prog, FALSE);
+		}
+
+		prog->unbind();
 	}
 };
 //******************************************************************************************
