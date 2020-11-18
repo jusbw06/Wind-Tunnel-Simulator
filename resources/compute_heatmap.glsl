@@ -4,7 +4,7 @@ layout(rgba32f, binding = 0) uniform image2D img_input;									//input image
 layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
 
 #define ARRAY_LEN 1920
-
+#define PI 3.14159265
 
 layout (std430, binding=2) volatile buffer grid_data
 { 
@@ -103,7 +103,13 @@ void main(){
 	}else{
 	
 		uint pos_index = uint(pixel_coords.x);
-		vec3 color = getColor(vel[pos_index].x);
+
+		float b = (540 + lneg(float(pixel_coords.x) / 192) * 192);
+		float a = (540 + l(float(pixel_coords.x) / 192) * 192);
+
+		float pixelVelocity = sin((pixel_coords.y - b) / (a - b) * PI) * vel[pos_index].x; // MAXVELOCITY 
+
+		vec3 color = getColor(pixelVelocity);
 		pixel = vec4(color.r, color.g, color.b, 0);
 
 	}

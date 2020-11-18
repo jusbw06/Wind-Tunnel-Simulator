@@ -348,7 +348,7 @@ public:
 
 		// init sphere objs
 		for (int i = 0; i < NUM_SPHERE; i++) {
-			sphereObj.position[i] = vec4(rand() % 8 - 4, rand() % 8 - 4, -(rand() % 10 + 15), 0.1);
+			sphereObj.position[i] = vec4(randf() * 2. - 1.0, randf() * 2. - 1.0, randf() * 2. - 1.0, 1);
 			sphereObj.velocity[i] = vec4(0, -1 * randf(), 0, 1);
 		}
 
@@ -394,8 +394,8 @@ public:
 		// Set background color.
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		// Enable z-buffer test.
-		glEnable(GL_DEPTH_TEST);
-
+		//glEnable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_TEST);
 		// Initialize the GLSL program.
 		
 
@@ -535,12 +535,7 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		postproc->unbind();
 
-
-		glViewport(0, 0, width, height);
-
-		// Clear framebuffer.
-		glClearColor(0.8f, 0.8f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		float ratio = (float)width / (float)height;
 
 
 		// render spheres
@@ -551,7 +546,7 @@ public:
 		prog->bind();
 		
 		glm::mat4 TransZ;
-		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.1));
+		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.02,0.02* ratio,1.0));
 
 		float frametime = get_last_elapsed_time();
 
