@@ -1,9 +1,9 @@
 #version 450 
 layout(local_size_x = 1, local_size_y = 1) in;											//local group of shaders
 layout(rgba32f, binding = 0) uniform image2D img_input;									//input image
-layout(rgba32f, binding = 1) uniform image2D img_output;									//output image
+layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
 
-#define ARRAY_LEN 100
+#define ARRAY_LEN 1920
 
 
 layout (std430, binding=2) volatile buffer grid_data
@@ -18,31 +18,32 @@ layout (std430, binding=2) volatile buffer grid_data
 	// reserved for debugging
 	vec4 temp[ARRAY_LEN];
 
+	float dist;
+
 };
 
 #define RESX 1920
 #define RESY 1080
 
-#define l(x) (0.0725*x*x - 0.725*x + 2.8125)
-#define lneg(x) (-0.0725*x*x + 0.725*x + -2.8125)
+float l(float x) {
+	return (0.0725 * x * x - 0.725 * x + 2.8125 - dist);
+}
+
+float lneg(float x) {
+	return (-0.0725 * x * x + 0.725 * x + -2.8125 + dist);
+}
 
 int isWall(ivec2 pixel_coords){
 
-	if (pixel_coords.y < (540 + lneg(pixel_coords.x / 192) * 192)){
+	if (pixel_coords.y < (540 + lneg(float(pixel_coords.x) / 192) * 192)){
 		return 1;
 	}
 
-	if ( pixel_coords.y > (540 + l(pixel_coords.x/192)*192) ){
+	if ( pixel_coords.y > (540 + l(float(pixel_coords.x)/192)*192) ){
 		return 1;
 	}
 
 	return 0;
-}
-
-float map(float value, float min1, float max1, float min2, float max2) {
-
-	return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
-
 }
 
 vec3 getColor(float v) {
@@ -76,12 +77,16 @@ vec3 getColor(float v) {
 			resultColor.g = 1 - remainder;
 			resultColor.b = 1;
 			break;
-		case 4:
-			resultColor.r = 0;
+		default:
+			resultColor.r = 1;
 			resultColor.g = 0;
-			resultColor.b = 1;
+			resultColor.b = 0;
 			break;
 	}
+
+	resultColor.r = clamp(resultColor.r, 0, 1);
+	resultColor.g = clamp(resultColor.g, 0, 1);
+	resultColor.b = clamp(resultColor.b, 0, 1);
 
 	return resultColor;
 
@@ -97,14 +102,12 @@ void main(){
 		pixel = vec4(0);
 	}else{
 	
-		uint pos_index = uint(pixel_coords.x / 192 * 10);
-		float green = map(vel[pos_index].x, .355, 1, 0.1, 1);
+		uint pos_index = uint(pixel_coords.x);
 		vec3 color = getColor(vel[pos_index].x);
-		//pixel = vec4(0,green,green,0);
 		pixel = vec4(color.r, color.g, color.b, 0);
 
 	}
-
 	
 	imageStore(img_output, pixel_coords, pixel);
+	
 	}

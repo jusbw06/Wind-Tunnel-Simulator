@@ -32,8 +32,9 @@ std::vector<unsigned char> buffer2(RESX * RESY * 4);
 
 GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram;
 
-#define ARRAY_LEN 100
 #define NUM_SPHERE 100
+#define ARRAY_LEN 1920
+
 
 class ssbo_data
 {
@@ -47,6 +48,8 @@ public:
 
 	// reserved for debugging
 	vec4 temp[ARRAY_LEN];
+
+	float dist;
 };
 
 
@@ -131,11 +134,22 @@ public:
 	Camera camera;
 	Object sphereObj;
 
+	float distanceCPU = 0;
+
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
+		}
+
+		if (key == GLFW_KEY_UP && action == GLFW_PRESS)
+		{
+			distanceCPU += 0.1;
+		}
+		if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
+		{
+			distanceCPU -= 0.1;
 		}
 		
 	}
@@ -158,7 +172,8 @@ public:
 			mousepressed = true;
 			double dx = posX - LposX;
 			double dy = posY - LposY;
-			std::cout << "Pos X " << dx << " Pos Y " << dy << std::endl;
+			std::cout << "Pos X " << posX << " Pos Y " << posY << std::endl;
+			cout << "Vel: " << ssbo.vel[(int)posX].x << "m/s, Gauge Pressure: -" << ssbo.pressure[(int)posX].x << "Pa" << endl;
 
 		}
 		if (action == GLFW_RELEASE) {
@@ -176,13 +191,13 @@ public:
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
 	}
-#define XDIM 100
+#define XDIM 1920
 	void initGrid() {
 
 		// initialize the grid
 		for (int i = 0; i < XDIM; i++) {
 
-			ssbo.pos[i] = vec4( ((float) i) / 10.0f, 0, 0, 0);
+			ssbo.pos[i] = vec4( ((float) i) / 192.0f, 0, 0, 0);
 
 		}
 
@@ -437,6 +452,8 @@ public:
 		block_index = glGetProgramResourceIndex(computeGridProgram, GL_SHADER_STORAGE_BLOCK, "grid_data");
 		GLuint ssbo_binding_point_index = 2;
 		glShaderStorageBlockBinding(computeGridProgram, block_index, ssbo_binding_point_index);
+
+
 	}
 
 	/****DRAW
@@ -455,7 +472,7 @@ public:
 
 
 			glUseProgram(computeGridProgram);
-			glDispatchCompute( (GLuint)1, (GLuint)1, 1);
+			glDispatchCompute( (GLuint)1920, (GLuint)1, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			// test "grid_data"
@@ -466,9 +483,11 @@ public:
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
 
-			for (int i = 0; i < XDIM; i++) {
+			/*for (int i = 0; i < XDIM; i++) {
 				cout << "X Pos: " << ssbo.pos[i].x << "m, Width: " << ssbo.pos[i].w << "m, Vel: " << ssbo.vel[i].x << "m/s, Gauge Pressure: -" << ssbo.pressure[i].x << "Pa" << endl;
-			}
+			}*/
+
+			//cout << "Distance: " << distanceCPU << endl;
 
 			// copy over data
 
@@ -480,6 +499,11 @@ public:
 			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
 			flap = !flap;
+
+			ssbo.dist = distanceCPU;
+
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo, GL_DYNAMIC_COPY);
 
 			return flap;
 
@@ -562,6 +586,8 @@ int main(int argc, char **argv)
 	glfwMakeContextCurrent(window);
 	//initialize Open GL Loader function
 	gladLoadGL();
+
+	//cout << "Max compute work group count: " << glGetIntegeri_v() << endl;
 
 	std::string resourceDir = "../resources"; // Where the resources are loaded from
 	if (argc >= 2)
