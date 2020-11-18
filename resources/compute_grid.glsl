@@ -28,6 +28,7 @@ layout (std430, binding=2) volatile buffer grid_data
 
 // l(x): y = 0.0725x^2 - 0.725x + 2.8125
 #define l(x) (0.0725*x*x -0.725*x + 2.8125)
+#define lneg(x) (-0.0725*x*x + 0.725*x + -2.8125)
 #define MASS_FLOW 1.0
 
 void main(){
@@ -39,7 +40,7 @@ void main(){
 	}
 
 	// l(x)
-	pos[index].w = l(pos[index].x);
+	pos[index].w = l(pos[index].x) - lneg(pos[index].x);
 
 	// m_dot = rhoAv
 	vel[index].x = MASS_FLOW/l(pos[index].x);
