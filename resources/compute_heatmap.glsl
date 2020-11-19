@@ -18,24 +18,61 @@ layout (std430, binding=2) volatile buffer grid_data
 	// reserved for debugging
 	vec4 temp[ARRAY_LEN];
 
-	float dist;
+	float temp1;
 
 };
 
 #define RESX 1920
 #define RESY 1080
 
+uniform float dist;
+
+
 float l(float x) {
 	return (0.0725 * x * x - 0.725 * x + 2.8125 - dist);
 }
 
-float lneg(float x) {
-	return (-0.0725 * x * x + 0.725 * x + -2.8125 + dist);
+float dldx(float x){
+	return (0.145*x - 0.725);
 }
 
+
+
+// in radius
+// in vec2 particle position
+int isWallCollision(ivec2 particle_coords, float radius){
+
+	if ( particle_coords.y > (540 + l(float(particle_coords.x)/192)*192) - radius ){
+		return 1;
+	}
+
+	return 0;
+
+}
+
+// in vel particle
+// out new vel vector
+vec2 collision(ivec2 particle_coords, vec2 particle_velocity){
+
+	vec2 resultant = particle_velocity;
+
+	float radius = 25; // in pixels
+	if (isWallCollision(particle_coords, radius) == 1){
+	
+		float dydx = dldx(particle_coords.x);
+		vec2 normal = normalize(vec2(-1, dydx));
+
+		// r = d - 2(d dot n)n
+		resultant = particle_velocity - 2*dot(particle_velocity, normal) * normal;
+
+	}
+
+	return resultant;
+
+}
 int isWall(ivec2 pixel_coords){
 
-	if (pixel_coords.y < (540 + lneg(float(pixel_coords.x) / 192) * 192)){
+	if (pixel_coords.y < (540 + (-l(float(pixel_coords.x) / 192)) * 192)){
 		return 1;
 	}
 
@@ -104,7 +141,7 @@ void main(){
 	
 		uint pos_index = uint(pixel_coords.x);
 
-		float b = (540 + lneg(float(pixel_coords.x) / 192) * 192);
+		float b = (540 + (-l(float(pixel_coords.x) / 192)) * 192);
 		float a = (540 + l(float(pixel_coords.x) / 192) * 192);
 
 		float pixelVelocity = sin((pixel_coords.y - b) / (a - b) * PI) * vel[pos_index].x; // MAXVELOCITY 

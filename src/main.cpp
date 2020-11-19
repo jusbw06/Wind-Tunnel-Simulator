@@ -471,7 +471,11 @@ public:
 			//glShaderStorageBlockBinding(computeGridProgram, block_index, ssbo_binding_point_index);
 
 
+
+			
 			glUseProgram(computeGridProgram);
+			GLuint uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
+			glUniform1f(uniformVarLoc, distanceCPU);
 			glDispatchCompute( (GLuint)1920, (GLuint)1, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
@@ -493,6 +497,8 @@ public:
 
 			static bool flap = 1;
 			glUseProgram(computeHeatMapProgram);
+			uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
+			glUniform1f(uniformVarLoc, distanceCPU);
 			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -500,7 +506,7 @@ public:
 
 			flap = !flap;
 
-			ssbo.dist = distanceCPU;
+			//ssbo.dist = distanceCPU;
 
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 			glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo, GL_DYNAMIC_COPY);

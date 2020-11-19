@@ -19,7 +19,7 @@ layout (std430, binding=2) volatile buffer grid_data
 
 	//{[1,1,1,1], [1,12,3,0] }
 
-	float dist;
+	float temp1;
 
 };
 
@@ -33,12 +33,48 @@ layout (std430, binding=2) volatile buffer grid_data
 // l(x): y = 0.0725x^2 - 0.725x + 2.8125
 #define MASS_FLOW 1.0
 
+
+uniform float dist;
+
 float l(float x) {
 	return (0.0725 * x * x - 0.725 * x + 2.8125 - dist);
 }
 
-float lneg(float x) {
-	return (-0.0725 * x * x + 0.725 * x + -2.8125 + dist);
+float dldx(float x){
+	return (0.145*x - 0.725);
+}
+
+// in radius
+// in vec2 particle position
+int isWallCollision(ivec2 particle_coords, float radius){
+
+	if ( particle_coords.y > (540 + l(float(particle_coords.x)/192)*192) - radius ){
+		return 1;
+	}
+
+	return 0;
+
+}
+
+// in vel particle
+// out new vel vector
+vec2 collision(ivec2 particle_coords, vec2 particle_velocity){
+
+	vec2 resultant = particle_velocity;
+
+	float radius = 25; // in pixels
+	if (isWallCollision(particle_coords, radius) == 1){
+	
+		float dydx = dldx(particle_coords.x);
+		vec2 normal = normalize(vec2(-1, dydx));
+
+		// r = d - 2(d dot n)n
+		resultant = particle_velocity - 2*dot(particle_velocity, normal) * normal;
+
+	}
+
+	return resultant;
+
 }
 
 void main(){
@@ -50,7 +86,7 @@ void main(){
 	}
 
 	// l(x)
-	pos[index].w = (l(pos[index].x) - lneg(pos[index].x));
+	pos[index].w = (l(pos[index].x) - (-l(pos[index].x)));
 
 	// m_dot = rhoAv
 	vel[index].x = MASS_FLOW/pos[index].w;

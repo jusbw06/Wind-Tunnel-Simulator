@@ -37,7 +37,7 @@
     <ClInclude Include="WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\resources\compute.glsl" />
+    <None Include="..\resources\compute_grid.glsl" />
     <None Include="..\resources\compute_heatmap.glsl" />
     <None Include="..\resources\compute_particle.glsl" />
     <None Include="..\resources\compute_vort.glsl" />
