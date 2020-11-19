@@ -1,6 +1,6 @@
-build/
+build/*
 .vs/
-Debug/
-src/Debug/
+Debug/*
+src/Debug/*
 src/lab framebuffer.vcxproj
 src/lab framebugger.vcxproj.filters

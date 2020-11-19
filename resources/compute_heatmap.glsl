@@ -5,6 +5,7 @@ layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
 
 #define ARRAY_LEN 1920
 #define PI 3.14159265
+#define MAX_SPHERE 100
 
 layout (std430, binding=2) volatile buffer grid_data
 { 
@@ -19,6 +20,12 @@ layout (std430, binding=2) volatile buffer grid_data
 	vec4 temp[ARRAY_LEN];
 
 	float temp1;
+
+	int num_sphere;
+	vec4 spos[MAX_SPHERE];
+	vec4 svel[MAX_SPHERE];
+	int mouse_x;
+	int mouse_y;
 
 };
 

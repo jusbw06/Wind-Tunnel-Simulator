@@ -34,6 +34,7 @@ GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram;
 
 #define NUM_SPHERE 100
 #define ARRAY_LEN 1920
+#define MAX_SPHERE 100
 
 
 class ssbo_data
@@ -50,6 +51,13 @@ public:
 	vec4 temp[ARRAY_LEN];
 
 	float dist;
+
+	// for spheres
+	int num_sphere;
+	vec4 spos[MAX_SPHERE];
+	vec4 svel[MAX_SPHERE];
+	int mouse_x;
+	int mouse_y;
 };
 
 
@@ -174,6 +182,16 @@ public:
 			double dy = posY - LposY;
 			std::cout << "Pos X " << posX << " Pos Y " << posY << std::endl;
 			cout << "Vel: " << ssbo.vel[(int)posX].x << "m/s, Gauge Pressure: -" << ssbo.pressure[(int)posX].x << "Pa" << endl;
+
+			mouse_current_x = posX;
+			mouse_current_y = posY;
+
+			ssbo.spos[ssbo.num_sphere].x = posX / RESX * 2.0f - 1.0f;
+			ssbo.spos[ssbo.num_sphere].y = -1 * (posY / RESY * 2.0f - 1.0f);
+
+			ssbo.num_sphere += 1;
+			ssbo.mouse_x = posX;
+			ssbo.mouse_y = posY;
 
 		}
 		if (action == GLFW_RELEASE) {
@@ -346,10 +364,11 @@ public:
 		glUniform1i(l2, 1);
 
 
-		// init sphere objs
-		for (int i = 0; i < NUM_SPHERE; i++) {
-			sphereObj.position[i] = vec4(randf() * 2. - 1.0, randf() * 2. - 1.0, randf() * 2. - 1.0, 1);
-			sphereObj.velocity[i] = vec4(0, -1 * randf(), 0, 1);
+		// init spheres in ssbo
+		ssbo.num_sphere = 0;
+		for (int i = 0; i < MAX_SPHERE; i++) {
+			ssbo.spos[i] = vec4(0, 0, 0, 1);
+			ssbo.svel[i] = vec4(0, -1, 0, 1);
 		}
 
 	}
@@ -471,6 +490,10 @@ public:
 			//glShaderStorageBlockBinding(computeGridProgram, block_index, ssbo_binding_point_index);
 
 
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			memcpy(p, &ssbo, sizeof(ssbo_data));
+			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
 			
 			glUseProgram(computeGridProgram);
@@ -481,7 +504,7 @@ public:
 
 			// test "grid_data"
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
 			memcpy(&ssbo, p, sizeof(ssbo_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
@@ -516,9 +539,8 @@ public:
 	}
 
 	void update(int i, float delta_t) {
-		sphereObj.position[i].x += sphereObj.velocity[i].x * delta_t;
-		sphereObj.position[i].y += sphereObj.velocity[i].y * delta_t;
-		sphereObj.position[i].z += sphereObj.velocity[i].z * delta_t;
+		ssbo.spos[i].x += ssbo.svel[i].x * delta_t;
+		ssbo.spos[i].y += ssbo.svel[i].y * delta_t;
 	}
 
 	//*****************************************************************************************
@@ -556,19 +578,14 @@ public:
 
 		float frametime = get_last_elapsed_time();
 
-		for (int i = 0; i < NUM_SPHERE; i++) {
+		for (int i = 0; i < ssbo.num_sphere; i++) {
 			update(i, frametime);
 
-			vec3 pos = sphereObj.position[i];
+			vec3 pos = ssbo.spos[i];
 			TransZ = glm::translate(glm::mat4(1.0f), pos);
 			M = TransZ * S;
 
-			V = camera.process(frametime);
-			//send the matrices to the shaders
-			glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-			glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 			glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-			glUniform3fv(prog->getUniform("campos"), 1, &camera.pos[0]);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, SphereTexture);
 			sphere->draw(prog, FALSE);
