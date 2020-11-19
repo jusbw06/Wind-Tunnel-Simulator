@@ -6,6 +6,7 @@ layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
 #define ARRAY_LEN 1920
 #define PI 3.14159265
 #define MAX_SPHERE 100
+#define RADIUS 0.02
 
 layout (std430, binding=2) volatile buffer grid_data
 { 
@@ -136,6 +137,22 @@ vec3 getColor(float v) {
 
 }
 
+// for particles
+bool isCollide(inout vec4 v1, inout vec4 v2) {
+	vec3 delta = vec3(v1.x, v1.y, v1.z) - vec3(v2.x, v2.y, v2.z);
+	return dot(delta, delta) < RADIUS;
+
+}
+
+vec3 projectUonV(inout vec4 v1, inout vec4 v2) {
+	vec3 r;
+	vec3 u = vec3(v1.x, v1.y, v1.z);
+	vec3 v = vec3(v2.x, v2.y, v2.z);
+	r = v * (dot(u, v) / dot(u, v));
+	return r;
+}
+
+
 void main(){
 
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);	
@@ -159,5 +176,28 @@ void main(){
 	}
 	
 	imageStore(img_output, pixel_coords, pixel);
+
+
+
+	// for sphere collisions
+/*	uint index = gl_LocalInvocationID.x;
+	if (index > num_sphere)
+		return;
+	for (int i = 0; i < num_sphere; i++) {
+		if (i != index) {
+			if (isCollide(spos[i], spos[index])) {
+				vec4 a = spos[index] - spos[i];
+				vec4 b = spos[i] - spos[index];
+
+				svel[i].xyz += projectUonV(svel[index], a);
+				svel[i].xyz -= projectUonV(svel[i], b);
+
+				svel[index].xyz += projectUonV(svel[i], a);
+				svel[index].xyz -= projectUonV(svel[index], b);
+
+				break;
+			}
+		}
+	} */
 	
 	}

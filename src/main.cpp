@@ -5,6 +5,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -368,7 +369,7 @@ public:
 		ssbo.num_sphere = 0;
 		for (int i = 0; i < MAX_SPHERE; i++) {
 			ssbo.spos[i] = vec4(0, 0, 0, 1);
-			ssbo.svel[i] = vec4(0, -1, 0, 1);
+			ssbo.svel[i] = vec4(0, -0.1 + -randf(), 0, 1);
 		}
 
 	}
