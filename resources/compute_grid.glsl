@@ -31,6 +31,12 @@ layout (std430, binding=2) volatile buffer grid_data
 	int mouse_y;
 
 };
+layout(std430, binding = 3) volatile buffer sphere_data
+{
+	vec2 positionSphere[MAX_SPHERE];
+	vec2 velocitySphere[MAX_SPHERE];
+	vec2 accelerationSphere[MAX_SPHERE];
+};
 
 uniform float dist;
 uniform int num_sphere;
@@ -119,12 +125,21 @@ vec2 interpolate_velocity(float abs_vel, uint grid_x, uint grid_y, float L){
 	return resultant;
 }
 
+vec2 getSpherePos(vec2 spherePos) {
+	// SpherePos from 0 to 1
+	spherePos = (spherePos + 1.0) / 2.0;
+
+	spherePos.x = spherePos.x * RESX;
+	spherePos.y = spherePos.y * RESY;
+
+	return spherePos;
+}
+
 #define MASS_FLOW 1.0
 void main(){
 
 	uint posx = gl_GlobalInvocationID.x;
 	uint posy = gl_GlobalInvocationID.y;
-
 
 	//pos[posx][posy].z = l(pos[posx][posy].x);
 	//pos[posx][posy].w = lneg(pos[posx][posy].x);
@@ -156,6 +171,11 @@ void main(){
 	// dynamic pressure
 	// P = 1/2rhoV^2
 	pressure[posx][posy].x = 0.5 * 1 * vel[posx][posy].x * vel[posx][posy].x;
+
+	if (posy == 0 && posx < num_sphere) {
+		vec2 spherePos = getSpherePos(positionSphere[posx]);
+		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy;
+	}
 
 }
 

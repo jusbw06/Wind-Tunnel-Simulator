@@ -60,6 +60,14 @@ public:
 	int mouse_x;
 	int mouse_y;
 };
+class ssbo_sphere_data
+{
+public:
+	// for spheres
+	vec2 positionSphere[MAX_SPHERE];
+	vec2 velocitySphere[MAX_SPHERE];
+	vec2 accelerationSphere[MAX_SPHERE];
+};
 
 
 double get_last_elapsed_time()
@@ -135,8 +143,9 @@ public:
 	GLuint fb, depth_fb, FBOtex;
 	//texture data
 	GLuint Texture, Texture2;
-	GLuint CS_tex_A, CS_tex_B, ssbo_GPU_id;
+	GLuint CS_tex_A, CS_tex_B, ssbo_GPU_id, ssbo_sphere_GPU_id;
 	ssbo_data ssbo;
+	ssbo_sphere_data ssbo_sphere;
 
 	int tex_w, tex_h;
 	GLuint SphereTexture;
@@ -190,6 +199,9 @@ public:
 
 			ssbo.spos[num_sphere].x = posX / RESX * 2.0f - 1.0f;
 			ssbo.spos[num_sphere].y = -1 * (posY / RESY * 2.0f - 1.0f);
+
+			ssbo_sphere.positionSphere[num_sphere].x = posX / RESX * 2.0f - 1.0f;
+			ssbo_sphere.positionSphere[num_sphere].y = -1 * (posY / RESY * 2.0f - 1.0f);
 
 			num_sphere += 1;
 			ssbo.mouse_x = posX;
@@ -369,6 +381,10 @@ public:
 		for (int i = 0; i < MAX_SPHERE; i++) {
 			ssbo.spos[i] = vec4(0, 0, 0, 1);
 			ssbo.svel[i] = vec4(0, -1, 0, 1);
+
+			ssbo_sphere.positionSphere[i] = vec2(0, 0);
+			ssbo_sphere.velocitySphere[i] = vec2(0, 0);
+			ssbo_sphere.accelerationSphere[i] = vec2(0, 0);
 		}
 
 	}
@@ -475,6 +491,19 @@ public:
 		GLuint ssbo_binding_point_index = 2;
 		glShaderStorageBlockBinding(computeGridProgram, block_index, ssbo_binding_point_index);
 
+		// create ssbo
+		glGenBuffers(1, &ssbo_sphere_GPU_id);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_sphere_data), &ssbo_sphere, GL_DYNAMIC_COPY);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo_sphere_GPU_id);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+		// --------------------------------------------------------
+		// link ssbo
+		block_index;
+		block_index = glGetProgramResourceIndex(computeGridProgram, GL_SHADER_STORAGE_BLOCK, "sphere_data");
+		ssbo_binding_point_index = 3;
+		glShaderStorageBlockBinding(computeGridProgram, block_index, ssbo_binding_point_index);
+
 
 	}
 
@@ -487,15 +516,21 @@ public:
 	int compute(int printframes){
 
 			// link ssbo
-			//GLuint block_index;
-			//block_index = glGetProgramResourceIndex(computeGridProgram, GL_SHADER_STORAGE_BLOCK, "grid_data");
-			//GLuint ssbo_binding_point_index = 2;
-			//glShaderStorageBlockBinding(computeGridProgram, block_index, ssbo_binding_point_index);
+			/*GLuint block_index;
+			block_index = glGetProgramResourceIndex(computeGridProgram, GL_SHADER_STORAGE_BLOCK, "sphere_data");
+			GLuint ssbo_binding_point_index = 3;
+			glShaderStorageBlockBinding(computeGridProgram, block_index, ssbo_binding_point_index);*/
 
 
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			/*glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
 			memcpy(p, &ssbo, sizeof(ssbo_data));
+			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);*/
+
+			// Copy data from cpu to GPU
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
+			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			memcpy(p, &ssbo_sphere, sizeof(ssbo_sphere_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
 			
@@ -508,9 +543,17 @@ public:
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			// test "grid_data"
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			//p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			//memcpy(&ssbo, p, sizeof(ssbo_data));
+			//glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+
+
+			// Copy data from GPU to CPU
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
 			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-			memcpy(&ssbo, p, sizeof(ssbo_data));
+			memcpy(&ssbo_sphere, p, sizeof(ssbo_sphere_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
@@ -546,9 +589,6 @@ public:
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo, GL_DYNAMIC_COPY);
-
 			return flap;
 
 	}
@@ -556,6 +596,14 @@ public:
 	void update(int i, float delta_t) {
 		ssbo.spos[i].x += ssbo.svel[i].x * delta_t;
 		ssbo.spos[i].y += ssbo.svel[i].y * delta_t;
+
+		ssbo_sphere.velocitySphere[i].x += ssbo_sphere.accelerationSphere[i].x * delta_t;
+		ssbo_sphere.velocitySphere[i].y += ssbo_sphere.accelerationSphere[i].y * delta_t;
+
+		//cout << ssbo_sphere.positionSphere[i].x << ssbo_sphere.positionSphere[i].y << endl;
+
+		ssbo_sphere.positionSphere[i].x += ssbo_sphere.velocitySphere[i].x * delta_t;
+		ssbo_sphere.positionSphere[i].y += ssbo_sphere.velocitySphere[i].y * delta_t;
 	}
 
 	//*****************************************************************************************
@@ -596,7 +644,8 @@ public:
 		for (int i = 0; i < num_sphere; i++) {
 			update(i, frametime);
 
-			vec3 pos = ssbo.spos[i];
+			//vec3 pos = ssbo.spos[i];
+			vec3 pos = vec3(ssbo_sphere.positionSphere[i].x, ssbo_sphere.positionSphere[i].y, 0);
 			TransZ = glm::translate(glm::mat4(1.0f), pos);
 			M = TransZ * S;
 

@@ -35,6 +35,13 @@ layout (std430, binding=2) volatile buffer grid_data
 
 };
 
+layout(std430, binding = 3) volatile buffer sphere_data
+{
+	vec2 positionSphere[MAX_SPHERE];
+	vec2 velocitySphere[MAX_SPHERE];
+	vec2 accelerationSphere[MAX_SPHERE];
+};
+
 
 uniform float dist;
 uniform int num_sphere;
