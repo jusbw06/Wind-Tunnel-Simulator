@@ -23,6 +23,11 @@ using namespace glm;
 
 #define RESX 1920
 #define RESY 1080
+#define DIM_X 1920
+#define DIM_Y 1080
+#define XDIM 10
+#define YDIM 5.625
+#define XY_SCALE 192
 
 
 shared_ptr<Shape> sphere;
@@ -33,7 +38,6 @@ std::vector<unsigned char> buffer2(RESX * RESY * 4);
 GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram;
 
 #define NUM_SPHERE 100
-#define ARRAY_LEN 1920
 #define MAX_SPHERE 100
 
 
@@ -41,19 +45,16 @@ class ssbo_data
 {
 public:
 	// grid
-	vec4 pos[ARRAY_LEN]; // w = 1, unused
-	vec4 vel[ARRAY_LEN];
+	vec4 pos[DIM_X][DIM_Y];
 
 	// properties
-	vec4 pressure[ARRAY_LEN];
+	vec4 vel[DIM_X][DIM_Y];
+	vec4 pressure[DIM_X][DIM_Y];
 
 	// reserved for debugging
-	vec4 temp[ARRAY_LEN];
-
-	float dist;
+	vec4 temp[DIM_X];
 
 	// for spheres
-	int num_sphere;
 	vec4 spos[MAX_SPHERE];
 	vec4 svel[MAX_SPHERE];
 	int mouse_x;
@@ -141,6 +142,7 @@ public:
 	GLuint SphereTexture;
 	Camera camera;
 	Object sphereObj;
+	int num_sphere;
 
 	float distanceCPU = 0;
 
@@ -181,15 +183,15 @@ public:
 			double dx = posX - LposX;
 			double dy = posY - LposY;
 			std::cout << "Pos X " << posX << " Pos Y " << posY << std::endl;
-			cout << "Vel: " << ssbo.vel[(int)posX].x << "m/s, Gauge Pressure: -" << ssbo.pressure[(int)posX].x << "Pa" << endl;
+			cout << "Vel: " << ssbo.vel[(int)posX][(int)posY].x << "m/s, Gauge Pressure: -" << ssbo.pressure[(int)posX][(int)posY].x << "Pa" << endl;
 
 			mouse_current_x = posX;
 			mouse_current_y = posY;
 
-			ssbo.spos[ssbo.num_sphere].x = posX / RESX * 2.0f - 1.0f;
-			ssbo.spos[ssbo.num_sphere].y = -1 * (posY / RESY * 2.0f - 1.0f);
+			ssbo.spos[num_sphere].x = posX / RESX * 2.0f - 1.0f;
+			ssbo.spos[num_sphere].y = -1 * (posY / RESY * 2.0f - 1.0f);
 
-			ssbo.num_sphere += 1;
+			num_sphere += 1;
 			ssbo.mouse_x = posX;
 			ssbo.mouse_y = posY;
 
@@ -209,16 +211,14 @@ public:
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
 	}
-#define XDIM 1920
+
 	void initGrid() {
-
 		// initialize the grid
-		for (int i = 0; i < XDIM; i++) {
-
-			ssbo.pos[i] = vec4( ((float) i) / 192.0f, 0, 0, 0);
-
+		for (int i = 0; i < DIM_X; i++) {
+			for (int j = 0; j < DIM_Y; j++) {
+				ssbo.pos[i][j] = vec4(((float)i) / XY_SCALE, ((float)j) / XY_SCALE - 2.8125, 0, 0);
+			}
 		}
-
 	}
 
 	/*Note that any gl calls must always happen after a GL state is initialized */
@@ -365,7 +365,7 @@ public:
 
 
 		// init spheres in ssbo
-		ssbo.num_sphere = 0;
+		num_sphere = 0;
 		for (int i = 0; i < MAX_SPHERE; i++) {
 			ssbo.spos[i] = vec4(0, 0, 0, 1);
 			ssbo.svel[i] = vec4(0, -1, 0, 1);
@@ -457,6 +457,9 @@ public:
 		//load the HeatMap shader
 		createComputeShader(&computeHeatMapProgram, "compute_heatmap");
 
+		// create arrow shader
+		createComputeShader(&computeParticleProgram, "compute_particle");
+
 		initGrid();
 
 		// create ssbo
@@ -499,7 +502,9 @@ public:
 			glUseProgram(computeGridProgram);
 			GLuint uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
 			glUniform1f(uniformVarLoc, distanceCPU);
-			glDispatchCompute( (GLuint)1920, (GLuint)1, 1);
+			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
+			glUniform1i(uniformVarLoc, num_sphere);
+			glDispatchCompute( (GLuint)1920, (GLuint)1080, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 			// test "grid_data"
@@ -522,6 +527,8 @@ public:
 			glUseProgram(computeHeatMapProgram);
 			uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
 			glUniform1f(uniformVarLoc, distanceCPU);
+			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
+			glUniform1i(uniformVarLoc, num_sphere);
 			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -529,7 +536,15 @@ public:
 
 			flap = !flap;
 
-			//ssbo.dist = distanceCPU;
+			glUseProgram(computeParticleProgram);
+			uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
+			glUniform1f(uniformVarLoc, distanceCPU);
+			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
+			glUniform1i(uniformVarLoc, num_sphere);
+			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 			glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ssbo_data), &ssbo, GL_DYNAMIC_COPY);
@@ -578,7 +593,7 @@ public:
 
 		float frametime = get_last_elapsed_time();
 
-		for (int i = 0; i < ssbo.num_sphere; i++) {
+		for (int i = 0; i < num_sphere; i++) {
 			update(i, frametime);
 
 			vec3 pos = ssbo.spos[i];

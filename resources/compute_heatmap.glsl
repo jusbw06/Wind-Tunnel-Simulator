@@ -3,25 +3,31 @@ layout(local_size_x = 1, local_size_y = 1) in;											//local group of shader
 layout(rgba32f, binding = 0) uniform image2D img_input;									//input image
 layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
 
-#define ARRAY_LEN 1920
+
+
+#define RESX 1920
+#define RESY 1080
+#define DIM_X 1920
+#define DIM_Y 1080
+#define XDIM 10
+#define YDIM 5.625
+#define XY_SCALE DIM_X/XDIM
+
 #define PI 3.14159265
 #define MAX_SPHERE 100
 
 layout (std430, binding=2) volatile buffer grid_data
 { 
 	// grid
-	vec4 pos[ARRAY_LEN];
+	vec4 pos[DIM_X][DIM_Y];
 
 	// properties
-	vec4 vel[ARRAY_LEN];
-	vec4 pressure[ARRAY_LEN];
+	vec4 vel[DIM_X][DIM_Y];
+	vec4 pressure[DIM_X][DIM_Y];
 
 	// reserved for debugging
-	vec4 temp[ARRAY_LEN];
+	vec4 temp[DIM_X];
 
-	float temp1;
-
-	int num_sphere;
 	vec4 spos[MAX_SPHERE];
 	vec4 svel[MAX_SPHERE];
 	int mouse_x;
@@ -29,22 +35,19 @@ layout (std430, binding=2) volatile buffer grid_data
 
 };
 
-#define RESX 1920
-#define RESY 1080
 
 uniform float dist;
+uniform int num_sphere;
 
 
 float l(float x) {
 	return (0.0725 * x * x - 0.725 * x + 2.8125 - dist);
 }
-
-float dldx(float x){
-	return (0.145*x - 0.725);
-}
+#define lneg(x) (-1 * l(x)) 
+#define dldx(x) (0.145*x - 0.725)
 
 
-
+/* NEEDS UPDATE */
 // in radius
 // in vec2 particle position
 int isWallCollision(ivec2 particle_coords, float radius){
@@ -56,7 +59,7 @@ int isWallCollision(ivec2 particle_coords, float radius){
 	return 0;
 
 }
-
+/* NEEDS UPDATE */
 // in vel particle
 // out new vel vector
 vec2 collision(ivec2 particle_coords, vec2 particle_velocity){
@@ -77,13 +80,14 @@ vec2 collision(ivec2 particle_coords, vec2 particle_velocity){
 	return resultant;
 
 }
-int isWall(ivec2 pixel_coords){
 
-	if (pixel_coords.y < (540 + (-l(float(pixel_coords.x) / 192)) * 192)){
+int isWall(vec2 pos){
+
+	if ( pos.y < lneg(pos.x) ){
 		return 1;
 	}
 
-	if ( pixel_coords.y > (540 + l(float(pixel_coords.x)/192)*192) ){
+	if ( pos.y > l(pos.x) ){
 		return 1;
 	}
 
@@ -136,28 +140,28 @@ vec3 getColor(float v) {
 
 }
 
+#define rho 1
+#define mu 1
+#define Re(v,x) sqrt(rho*v*x/mu)
+#define delta99(x,v,L) 0
+#define u(x,y) ( sqrt(mu/rho/x)*5.0*x/y ) * ( sqrt(mu/rho/x)*5.0*x/y )
 void main(){
 
-	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);	
-	vec4 pixel;
+	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+
+	int posx = pixel_coords.x; // addressable to pixel, may need change
+	int posy = pixel_coords.y; // if grid coords are diff from RES
+
+	vec4 pixel = vec4(0);
 
 	// black screen on working ssbo
-	if ( isWall(pixel_coords) == 1 ){
-		pixel = vec4(0);
+	if ( isWall( pos[posx][posy].xy ) == 1 ){
+
 	}else{
-	
-		uint pos_index = uint(pixel_coords.x);
-
-		float b = (540 + (-l(float(pixel_coords.x) / 192)) * 192);
-		float a = (540 + l(float(pixel_coords.x) / 192) * 192);
-
-		float pixelVelocity = sin((pixel_coords.y - b) / (a - b) * PI) * vel[pos_index].x; // MAXVELOCITY 
-
-		vec3 color = getColor(pixelVelocity);
-		pixel = vec4(color.r, color.g, color.b, 0);
-
+		pixel.xyz = getColor(vel[posx][posy].x);
 	}
+	
 	
 	imageStore(img_output, pixel_coords, pixel);
-	
-	}
+
+}
