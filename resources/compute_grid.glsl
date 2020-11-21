@@ -35,16 +35,20 @@ layout (std430, binding=2) volatile buffer grid_data
 
 	vec4 spos[MAX_SPHERE];
 	vec4 svel[MAX_SPHERE];
-	int mouse_x;
-	int mouse_y;
 
 };
 
 layout(std430, binding = 3) volatile buffer sphere_data
 {
-	vec2 positionSphere[MAX_SPHERE];
+	vec4 positionSphere[MAX_SPHERE];      // x: xpos, y: ypos z: mass
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
+	vec2 mouseVelocity;
+	vec2 mousePressure;
+
+	int mouse_x;
+	int mouse_y;
+	int numSphere;
 };
 
 uniform float dist;
@@ -183,9 +187,16 @@ void main(){
 	// P = 1/2rhoV^2
 	pressure[posx][posy].x = 0.5 * 1 * vel[posx][posy].x * vel[posx][posy].x;
 
-	if (posy == 0 && posx < num_sphere) {
-		vec2 spherePos = getSpherePos(positionSphere[posx]);
-		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy;
+
+	if (posx < numSphere) {
+		vec2 spherePos = getSpherePos(positionSphere[posx].xy);
+		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy / positionSphere[posx].z * 1.5;
+	//	velocitySphere[posx] += vel[int(spherePos.x)][int(spherePos.y)].xy / positionSphere[posx].z * 1.5;
+	}
+
+	if (posx == 0 && posy == 0) {
+		mouseVelocity = vel[mouse_x][mouse_y].xy;
+		mousePressure = pressure[mouse_x][mouse_y].xy;
 	}
 
 }

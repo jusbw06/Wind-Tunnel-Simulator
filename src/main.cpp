@@ -61,17 +61,21 @@ public:
 	// for spheres
 	vec4 spos[MAX_SPHERE];
 	vec4 svel[MAX_SPHERE];
-	int mouse_x;
-	int mouse_y;
 };
 
 class ssbo_sphere_data
 {
 public:
 	// for spheres
-	vec2 positionSphere[MAX_SPHERE];
+	vec4 positionSphere[MAX_SPHERE];      // x: xpos, y: ypos z: mass
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
+	vec2 mouseVelocity;
+	vec2 mousePressure;
+
+	int mouse_x;
+	int mouse_y;
+	int numSphere;
 };
 
 double get_last_elapsed_time()
@@ -209,8 +213,9 @@ public:
 			ssbo_sphere.positionSphere[num_sphere].y = -1 * (posY / RESY * 2.0f - 1.0f);
 
 			num_sphere += 1;
-			ssbo.mouse_x = posX;
-			ssbo.mouse_y = posY;
+			ssbo_sphere.numSphere += 1;
+			ssbo_sphere.mouse_x = posX;
+			ssbo_sphere.mouse_y = posY;
 
 		}
 		if (action == GLFW_RELEASE) {
@@ -391,7 +396,7 @@ public:
 		for (int i = 0; i < MAX_SPHERE; i++) {
 			ssbo.spos[i] = vec4(0, 0, 0, 1);
 			ssbo.svel[i] = vec4(0, -1, 0, 1);
-			ssbo_sphere.positionSphere[i] = vec2(0, 0);
+			ssbo_sphere.positionSphere[i] = vec4(0, 0, randf() + 0.5, 0);
 			ssbo_sphere.velocitySphere[i] = vec2(0, 0);
 			ssbo_sphere.accelerationSphere[i] = vec2(0, 0);
 		}
@@ -535,6 +540,13 @@ public:
 			memcpy(p, &ssbo, sizeof(ssbo_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
+
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
+			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			memcpy(p, &ssbo_sphere, sizeof(ssbo_sphere_data));
+			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+
 			/* shader 1 */
 			glUseProgram(computeGridProgram);
 			GLuint uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
@@ -586,6 +598,13 @@ public:
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
+
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
+			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			memcpy(&ssbo_sphere, p, sizeof(ssbo_sphere_data));
+			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 			flap = !flap;
 			frame_num++;
 
@@ -594,8 +613,8 @@ public:
 	}
 
 	void update(int i, float delta_t) {
-		ssbo.spos[i].x += ssbo.svel[i].x * delta_t;
-		ssbo.spos[i].y += ssbo.svel[i].y * delta_t;
+	//	ssbo.spos[i].x += ssbo.svel[i].x * delta_t;
+	//	ssbo.spos[i].y += ssbo.svel[i].y * delta_t;
 
 		ssbo_sphere.velocitySphere[i].x += ssbo_sphere.accelerationSphere[i].x * delta_t;
 		ssbo_sphere.velocitySphere[i].y += ssbo_sphere.accelerationSphere[i].y * delta_t;
@@ -637,15 +656,17 @@ public:
 		prog->bind();
 		
 		glm::mat4 TransZ;
-		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.02,0.02* ratio,1.0));
+		
 
 		float frametime = get_last_elapsed_time();
 
-		for (int i = 0; i < num_sphere; i++) {
+		for (int i = 0; i < ssbo_sphere.numSphere; i++) {
 			update(i, frametime);
 
 			//vec3 pos = ssbo.spos[i];
 			vec3 pos = vec3(ssbo_sphere.positionSphere[i].x, ssbo_sphere.positionSphere[i].y, 0);
+			float mass = ssbo_sphere.positionSphere[i].z;
+			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.02 * mass, 0.02 * ratio * mass, 1.0));
 			TransZ = glm::translate(glm::mat4(1.0f), pos);
 			M = TransZ * S;
 

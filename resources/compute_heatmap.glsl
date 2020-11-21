@@ -38,16 +38,20 @@ layout (std430, binding=2) volatile buffer grid_data
 
 	vec4 spos[MAX_SPHERE];
 	vec4 svel[MAX_SPHERE];
-	int mouse_x;
-	int mouse_y;
 
 };
 
 layout(std430, binding = 3) volatile buffer sphere_data
 {
-	vec2 positionSphere[MAX_SPHERE];
+	vec4 positionSphere[MAX_SPHERE];      // x: xpos, y: ypos z: mass
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
+	vec2 mouseVelocity;
+	vec2 mousePressure;
+
+	int mouse_x;
+	int mouse_y;
+	int numSphere;
 };
 
 uniform float dist;

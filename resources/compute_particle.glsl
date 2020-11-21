@@ -18,6 +18,9 @@ layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
 
 #define PI 3.14159265
 #define MAX_SPHERE 100
+#define RADIUS 0.02
+
+#define VMUL 0.1
 
 layout (std430, binding=2) volatile buffer grid_data
 { 
@@ -36,16 +39,20 @@ layout (std430, binding=2) volatile buffer grid_data
 
 	vec4 spos[MAX_SPHERE];
 	vec4 svel[MAX_SPHERE];
-	int mouse_x;
-	int mouse_y;
 
 };
 
 layout(std430, binding = 3) volatile buffer sphere_data
 {
-	vec2 positionSphere[MAX_SPHERE];
+	vec4 positionSphere[MAX_SPHERE];      // x: xpos, y: ypos z: mass
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
+	vec2 mouseVelocity;
+	vec2 mousePressure;
+
+	int mouse_x;
+	int mouse_y;
+	int numSphere;
 };
 
 uniform float dist;
@@ -102,6 +109,22 @@ void addArrows(ivec2 pixel_coords, vec2 vel_slope){
 
 }
 
+// for particle collision
+
+bool isCollide(vec4 v1, vec4 v2) {
+	vec3 delta = vec3(v1.x, v1.y, 0) - vec3(v2.x, v2.y, 0);
+	return length(delta) < RADIUS * v1.z + RADIUS * v2.z;
+
+}
+
+vec3 projectUonV(vec4 v1, vec4 v2) {
+	vec3 r;
+	vec3 u = vec3(v1.x, v1.y, 0);
+	vec3 v = vec3(v2.x, v2.y, 0);
+	r = v * (dot(u, v) / dot(u, v));
+	return r;
+}
+
 void main(){
 
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
@@ -112,6 +135,41 @@ void main(){
 	if (posx % 50 == 0 && posy % 50 == 0 && isWall( pos[posx][posy].xy ) != 1){
 		addArrows(pixel_coords, vel[posx][posy].xy);
 	}
+
+
+	uint index = pixel_coords.x;
+
+	if (index > numSphere)
+		return;
+
+
+	// check for sphere-boundry collision
+	ivec2 sphere_pixel_pos = ivec2((positionSphere[index].x + 1) / 2.0 * RESX, (positionSphere[index].y + 1) / 2.0 * RESY);
+	if (isWall(pos[sphere_pixel_pos.x][sphere_pixel_pos.y].xy) == 1) {
+		velocitySphere[index].xy = vec2(0, 0);
+	}
+
+	// sphere-sphere collision
+	for (int i = 0; i < num_sphere; i++) {
+		if (i != index && isCollide(positionSphere[i], positionSphere[index])) {
+			vec4 a = vec4(vec2(positionSphere[index].xy - positionSphere[i].xy), 0, 0);
+			vec4 b = vec4(vec2(positionSphere[i].xy - positionSphere[index].xy), 0, 0);
+
+			
+			velocitySphere[i].xy += projectUonV(vec4(velocitySphere[index], 0, 0), a).xy / positionSphere[i].z * VMUL;
+			velocitySphere[i].xy -= projectUonV(vec4(velocitySphere[i], 0, 0), b).xy / positionSphere[i].z * VMUL;
+
+			velocitySphere[index].xy += projectUonV(vec4(velocitySphere[i], 0, 0), a).xy / positionSphere[index].z * VMUL;
+			velocitySphere[index].xy -= projectUonV(vec4(velocitySphere[index], 0, 0), b).xy / positionSphere[index].z * VMUL;
+
+			//accelerationSphere[i].xy += projectUonV(vec4(velocitySphere[index], 0, 0), a).xy / positionSphere[i].z * VMUL;
+			//accelerationSphere[i].xy -= projectUonV(vec4(velocitySphere[i], 0, 0), b).xy / positionSphere[i].z * VMUL;
+
+			//accelerationSphere[index].xy += projectUonV(vec4(velocitySphere[i], 0, 0), a).xy / positionSphere[index].z * VMUL;
+			//accelerationSphere[index].xy -= projectUonV(vec4(velocitySphere[index], 0, 0), b).xy / positionSphere[index].z * VMUL; 
+		}
+	}
+
 
 }
 
