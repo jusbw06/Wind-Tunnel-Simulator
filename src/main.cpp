@@ -57,16 +57,20 @@ public:
 	// for spheres
 	vec4 spos[MAX_SPHERE];
 	vec4 svel[MAX_SPHERE];
-	int mouse_x;
-	int mouse_y;
 };
 class ssbo_sphere_data
 {
 public:
 	// for spheres
-	vec2 positionSphere[MAX_SPHERE];
+	vec4 positionSphere[MAX_SPHERE];
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
+	vec2 mouseVelocity;
+	vec2 mousePressure;
+
+	int mouse_x;
+	int mouse_y;
+	int numSphereTest;
 };
 
 
@@ -182,17 +186,11 @@ public:
 	{
 		double posX, posY;
 		glfwGetCursorPos(window, &posX, &posY);
-		static double LposX = posX, LposY = posY;
-
-		float newPt[2];
+	
 		mousepressed = false;
 		if (action == GLFW_PRESS)
 		{
 			mousepressed = true;
-			double dx = posX - LposX;
-			double dy = posY - LposY;
-			std::cout << "Pos X " << posX << " Pos Y " << posY << std::endl;
-			cout << "Vel: " << ssbo.vel[(int)posX][(int)posY].x << "m/s, Gauge Pressure: -" << ssbo.pressure[(int)posX][(int)posY].x << "Pa" << endl;
 
 			mouse_current_x = posX;
 			mouse_current_y = posY;
@@ -204,15 +202,13 @@ public:
 			ssbo_sphere.positionSphere[num_sphere].y = -1 * (posY / RESY * 2.0f - 1.0f);
 
 			num_sphere += 1;
-			ssbo.mouse_x = posX;
-			ssbo.mouse_y = posY;
+			ssbo_sphere.mouse_x = posX;
+			ssbo_sphere.mouse_y = posY;
 
 		}
 		if (action == GLFW_RELEASE) {
 			mousepressed = false;
 		}
-		LposX = posX;
-		LposY = posY;
 	}
 
 	//if the window is resized, capture the new size and reset the viewport
@@ -382,7 +378,7 @@ public:
 			ssbo.spos[i] = vec4(0, 0, 0, 1);
 			ssbo.svel[i] = vec4(0, -1, 0, 1);
 
-			ssbo_sphere.positionSphere[i] = vec2(0, 0);
+			ssbo_sphere.positionSphere[i] = vec4(0, 0, randf() + 0.5, 0);
 			ssbo_sphere.velocitySphere[i] = vec2(0, 0);
 			ssbo_sphere.accelerationSphere[i] = vec2(0, 0);
 		}
@@ -457,12 +453,8 @@ public:
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
 			exit(1);
 		}
-		prog->addUniform("P");
-		prog->addUniform("V");
 		prog->addUniform("M");
-		prog->addUniform("campos");
 		prog->addAttribute("vertPos");
-		prog->addAttribute("vertNor");
 		prog->addAttribute("vertTex");
 
 
@@ -527,6 +519,8 @@ public:
 			memcpy(p, &ssbo, sizeof(ssbo_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);*/
 
+			ssbo_sphere.numSphereTest = num_sphere;
+
 			// Copy data from cpu to GPU
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
 			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
@@ -537,8 +531,8 @@ public:
 			glUseProgram(computeGridProgram);
 			GLuint uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
 			glUniform1f(uniformVarLoc, distanceCPU);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
-			glUniform1i(uniformVarLoc, num_sphere);
+			//uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
+			//glUniform1i(uniformVarLoc, num_sphere);
 			glDispatchCompute( (GLuint)1920, (GLuint)1080, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
@@ -558,6 +552,12 @@ public:
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
 
+			if (mousepressed) {
+				mousepressed = false;
+				cout << "Vel: " << length(ssbo_sphere.mouseVelocity) << "m/s, Gauge Pressure: -" << ssbo_sphere.mousePressure.x << "Pa" << endl;
+			}
+
+
 			/*for (int i = 0; i < XDIM; i++) {
 				cout << "X Pos: " << ssbo.pos[i].x << "m, Width: " << ssbo.pos[i].w << "m, Vel: " << ssbo.vel[i].x << "m/s, Gauge Pressure: -" << ssbo.pressure[i].x << "Pa" << endl;
 			}*/
@@ -568,10 +568,10 @@ public:
 
 			static bool flap = 1;
 			glUseProgram(computeHeatMapProgram);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
+			uniformVarLoc = glGetUniformLocation(computeHeatMapProgram, "dist");
 			glUniform1f(uniformVarLoc, distanceCPU);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
-			glUniform1i(uniformVarLoc, num_sphere);
+			//uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
+			//glUniform1i(uniformVarLoc, num_sphere);
 			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -580,10 +580,10 @@ public:
 			flap = !flap;
 
 			glUseProgram(computeParticleProgram);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
+			uniformVarLoc = glGetUniformLocation(computeParticleProgram, "dist");
 			glUniform1f(uniformVarLoc, distanceCPU);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
-			glUniform1i(uniformVarLoc, num_sphere);
+			//uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
+			//glUniform1i(uniformVarLoc, num_sphere);
 			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -600,14 +600,12 @@ public:
 		ssbo_sphere.velocitySphere[i].x += ssbo_sphere.accelerationSphere[i].x * delta_t;
 		ssbo_sphere.velocitySphere[i].y += ssbo_sphere.accelerationSphere[i].y * delta_t;
 
-		//cout << ssbo_sphere.positionSphere[i].x << ssbo_sphere.positionSphere[i].y << endl;
-
 		ssbo_sphere.positionSphere[i].x += ssbo_sphere.velocitySphere[i].x * delta_t;
 		ssbo_sphere.positionSphere[i].y += ssbo_sphere.velocitySphere[i].y * delta_t;
 	}
 
 	//*****************************************************************************************
-	void render(int texnum){
+	void render(int texnum) {
 		// Get current frame buffer size.
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
@@ -637,7 +635,6 @@ public:
 		prog->bind();
 		
 		glm::mat4 TransZ;
-		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.02,0.02* ratio,1.0));
 
 		float frametime = get_last_elapsed_time();
 
@@ -646,6 +643,7 @@ public:
 
 			//vec3 pos = ssbo.spos[i];
 			vec3 pos = vec3(ssbo_sphere.positionSphere[i].x, ssbo_sphere.positionSphere[i].y, 0);
+			glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.02 * ssbo_sphere.positionSphere[i].z, 0.02 * ratio * ssbo_sphere.positionSphere[i].z, 1.0));
 			TransZ = glm::translate(glm::mat4(1.0f), pos);
 			M = TransZ * S;
 

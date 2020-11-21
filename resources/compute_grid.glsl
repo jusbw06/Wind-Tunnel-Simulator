@@ -1,5 +1,5 @@
 #version 450 
-layout(local_size_x = 1, local_size_y = 2) in;	
+layout(local_size_x = 1, local_size_y = 1) in;	
 
 
 #define RESX 1920
@@ -27,19 +27,22 @@ layout (std430, binding=2) volatile buffer grid_data
 
 	vec4 spos[MAX_SPHERE];
 	vec4 svel[MAX_SPHERE];
-	int mouse_x;
-	int mouse_y;
 
 };
 layout(std430, binding = 3) volatile buffer sphere_data
 {
-	vec2 positionSphere[MAX_SPHERE];
+	vec4 positionSphere[MAX_SPHERE];
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
+	vec2 mouseVelocity;
+	vec2 mousePressure;
+	
+	int mouse_x;
+	int mouse_y;
+	int numSphereTest;
 };
 
 uniform float dist;
-uniform int num_sphere;
 
 
 // 10m scale
@@ -141,9 +144,6 @@ void main(){
 	uint posx = gl_GlobalInvocationID.x;
 	uint posy = gl_GlobalInvocationID.y;
 
-	//pos[posx][posy].z = l(pos[posx][posy].x);
-	//pos[posx][posy].w = lneg(pos[posx][posy].x);
-
 	if ( isWall(pos[posx][posy].xy) == 1 ){
 		//isInvalid
 		vel[posx][posy] = vec4(0);
@@ -172,9 +172,14 @@ void main(){
 	// P = 1/2rhoV^2
 	pressure[posx][posy].x = 0.5 * 1 * vel[posx][posy].x * vel[posx][posy].x;
 
-	if (posy == 0 && posx < num_sphere) {
-		vec2 spherePos = getSpherePos(positionSphere[posx]);
-		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy;
+	if (posx < numSphereTest) {
+		vec2 spherePos = getSpherePos(positionSphere[posx].xy);
+		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy/positionSphere[posx].z * 1.5;
+	}
+
+	if (posx == 0 && posy == 0) {
+		mouseVelocity = vel[mouse_x][mouse_y].xy;
+		mousePressure = pressure[mouse_x][mouse_y].xy;
 	}
 
 }

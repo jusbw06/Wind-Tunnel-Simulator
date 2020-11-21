@@ -225,7 +225,7 @@ void Shape::draw(const shared_ptr<Program> prog,bool use_extern_texures) const
 		glVertexAttribPointer(h_pos, 3, GL_FLOAT, GL_FALSE, 0, (const void *)0);
 
 		// Bind normal buffer
-		h_nor = prog->getAttribute("vertNor");
+		//h_nor = prog->getAttribute("vertNor");
 		if (h_nor != -1 && norBufID[i] != 0)
 		{
 			GLSL::enableVertexAttribArray(h_nor);
