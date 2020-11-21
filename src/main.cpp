@@ -35,10 +35,11 @@ std::vector<float> bufInstance(RESX * RESY * 4);
 std::vector<unsigned char> buffer(RESX * RESY * 4);
 std::vector<unsigned char> buffer2(RESX * RESY * 4);
 
-GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram;
+GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram, computeStreamProgram;
 
 #define NUM_SPHERE 100
 #define MAX_SPHERE 100
+#define NUM_S_PARTICLES 256
 
 
 class ssbo_data
@@ -51,6 +52,9 @@ public:
 	vec4 vel[DIM_X][DIM_Y];
 	vec4 pressure[DIM_X][DIM_Y];
 
+	// streamline properties
+	vec4 stream_pos[NUM_S_PARTICLES];
+
 	// reserved for debugging
 	vec4 temp[DIM_X];
 
@@ -60,6 +64,7 @@ public:
 	int mouse_x;
 	int mouse_y;
 };
+
 class ssbo_sphere_data
 {
 public:
@@ -68,7 +73,6 @@ public:
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
 };
-
 
 double get_last_elapsed_time()
 {
@@ -152,6 +156,7 @@ public:
 	Camera camera;
 	Object sphereObj;
 	int num_sphere;
+	int frame_num = 0;
 
 	float distanceCPU = 0;
 
@@ -231,6 +236,10 @@ public:
 				ssbo.pos[i][j] = vec4(((float)i) / XY_SCALE, ((float)j) / XY_SCALE - 2.8125, 0, 0);
 			}
 		}
+		for (int i = 0; i < NUM_S_PARTICLES; i++) {
+			ssbo.stream_pos[i] = vec4(0);
+		}
+
 	}
 
 	/*Note that any gl calls must always happen after a GL state is initialized */
@@ -326,7 +335,8 @@ public:
 		float* temp;
 		temp = (float*)malloc(RESX * RESY * 4 * sizeof(float));
 		for (int i = 0; i < RESX * RESY * 4; i++)
-			temp[i] = (float)pic_data[i] / 256;
+			temp[i] = (float) -0.1;
+//			temp[i] = (float)pic_data[i] / 256;
 
 		//make a texture (buffer) on the GPU to store the input image
 		tex_w = width, tex_h = height;		//size
@@ -381,7 +391,6 @@ public:
 		for (int i = 0; i < MAX_SPHERE; i++) {
 			ssbo.spos[i] = vec4(0, 0, 0, 1);
 			ssbo.svel[i] = vec4(0, -1, 0, 1);
-
 			ssbo_sphere.positionSphere[i] = vec2(0, 0);
 			ssbo_sphere.velocitySphere[i] = vec2(0, 0);
 			ssbo_sphere.accelerationSphere[i] = vec2(0, 0);
@@ -476,6 +485,9 @@ public:
 		// create arrow shader
 		createComputeShader(&computeParticleProgram, "compute_particle");
 
+		// create arrow shader
+		createComputeShader(&computeStreamProgram, "compute_streamline");
+
 		initGrid();
 
 		// create ssbo
@@ -515,25 +527,15 @@ public:
 
 	int compute(int printframes){
 
-			// link ssbo
-			/*GLuint block_index;
-			block_index = glGetProgramResourceIndex(computeGridProgram, GL_SHADER_STORAGE_BLOCK, "sphere_data");
-			GLuint ssbo_binding_point_index = 3;
-			glShaderStorageBlockBinding(computeGridProgram, block_index, ssbo_binding_point_index);*/
+			static bool flap = 1;
 
-
-			/*glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			/* Copy from CPU to GPU */
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
 			memcpy(p, &ssbo, sizeof(ssbo_data));
-			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);*/
-
-			// Copy data from cpu to GPU
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
-			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-			memcpy(p, &ssbo_sphere, sizeof(ssbo_sphere_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
-			
+			/* shader 1 */
 			glUseProgram(computeGridProgram);
 			GLuint uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
 			glUniform1f(uniformVarLoc, distanceCPU);
@@ -542,52 +544,50 @@ public:
 			glDispatchCompute( (GLuint)1920, (GLuint)1080, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-			// test "grid_data"
-			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-			//p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-			//memcpy(&ssbo, p, sizeof(ssbo_data));
-			//glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+			/* shader 2 */
+			glUseProgram(computeHeatMapProgram);
+			uniformVarLoc = glGetUniformLocation(computeHeatMapProgram, "dist");
+			glUniform1f(uniformVarLoc, distanceCPU);
+			uniformVarLoc = glGetUniformLocation(computeHeatMapProgram, "num_sphere");
+			glUniform1i(uniformVarLoc, num_sphere);
+			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
+			/* shader 3 */
+			glUseProgram(computeParticleProgram);
+			uniformVarLoc = glGetUniformLocation(computeParticleProgram, "dist");
+			glUniform1f(uniformVarLoc, distanceCPU);
+			uniformVarLoc = glGetUniformLocation(computeParticleProgram, "num_sphere");
+			glUniform1i(uniformVarLoc, num_sphere);
+			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-			// Copy data from GPU to CPU
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
+			/* shader 4 */
+			glUseProgram(computeStreamProgram);
+			uniformVarLoc = glGetUniformLocation(computeStreamProgram, "dist");
+			glUniform1f(uniformVarLoc, distanceCPU);
+			uniformVarLoc = glGetUniformLocation(computeStreamProgram, "num_sphere");
+			glUniform1i(uniformVarLoc, num_sphere);
+			uniformVarLoc = glGetUniformLocation(computeStreamProgram, "frame_num");
+			glUniform1i(uniformVarLoc, frame_num);
+			glDispatchCompute((GLuint)256, (GLuint)1, 1);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+			/* Copy from GPU to CPU */
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-			memcpy(&ssbo_sphere, p, sizeof(ssbo_sphere_data));
+			memcpy(&ssbo, p, sizeof(ssbo_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
-
-			/*for (int i = 0; i < XDIM; i++) {
-				cout << "X Pos: " << ssbo.pos[i].x << "m, Width: " << ssbo.pos[i].w << "m, Vel: " << ssbo.vel[i].x << "m/s, Gauge Pressure: -" << ssbo.pressure[i].x << "Pa" << endl;
-			}*/
-
-			//cout << "Distance: " << distanceCPU << endl;
-
-			// copy over data
-
-			static bool flap = 1;
-			glUseProgram(computeHeatMapProgram);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
-			glUniform1f(uniformVarLoc, distanceCPU);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
-			glUniform1i(uniformVarLoc, num_sphere);
-			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-
 			flap = !flap;
-
-			glUseProgram(computeParticleProgram);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "dist");
-			glUniform1f(uniformVarLoc, distanceCPU);
-			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
-			glUniform1i(uniformVarLoc, num_sphere);
-			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+			frame_num++;
 
 			return flap;
 

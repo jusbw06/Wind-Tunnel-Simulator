@@ -1,28 +1,38 @@
 ﻿  glad.c
   GLSL.cpp
   main.cpp
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(89,15): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(93,16): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(97,16): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(99,15): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(158,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(162,1): warning C4305: '-=': truncation from 'double' to 'float'
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(188,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(189,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(191,49): warning C4244: '=': conversion from 'double' to 'T', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(101,15): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(105,16): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(109,16): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(111,15): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(172,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(176,1): warning C4305: '-=': truncation from 'double' to 'float'
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(202,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(203,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(205,49): warning C4244: '=': conversion from 'double' to 'T', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(192,33): warning C4244: '=': conversion from 'double' to 'T', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(206,33): warning C4244: '=': conversion from 'double' to 'T', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(195,19): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(196,19): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(178,9): warning C4101: 'newPt': unreferenced local variable
-C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(594,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(208,66): warning C4244: '=': conversion from 'double' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(209,50): warning C4244: '=': conversion from 'double' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(212,19): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(213,19): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(192,9): warning C4101: 'newPt': unreferenced local variable
+C:\Users\justi\OneDrive\Documents\GitHub\Wind-Tunnel-Simulator\src\main.cpp(642,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
   MatrixStack.cpp
   Program.cpp
   Shape.cpp

@@ -40,6 +40,7 @@
     <None Include="..\resources\compute_grid.glsl" />
     <None Include="..\resources\compute_heatmap.glsl" />
     <None Include="..\resources\compute_particle.glsl" />
+    <None Include="..\resources\compute_streamline.glsl" />
     <None Include="..\resources\compute_vort.glsl" />
     <None Include="..\resources\postproc_fragment.glsl" />
     <None Include="..\resources\postproc_vertex.glsl" />

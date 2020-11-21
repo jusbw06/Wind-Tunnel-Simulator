@@ -1,4 +1,7 @@
 #version 450 
+#extension GL_ARB_shader_storage_buffer_object : require
+#extension GL_ARB_arrays_of_arrays : require
+
 layout(local_size_x = 1, local_size_y = 1) in;											//local group of shaders
 layout(rgba32f, binding = 0) uniform image2D img_input;									//input image
 layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
@@ -11,7 +14,9 @@ layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
 #define DIM_Y 1080
 #define XDIM 10
 #define YDIM 5.625
-#define XY_SCALE DIM_X/XDIM
+#define XY_SCALE 192
+
+#define NUM_S_PARTICLES 256
 
 #define PI 3.14159265
 #define MAX_SPHERE 100
@@ -24,6 +29,9 @@ layout (std430, binding=2) volatile buffer grid_data
 	// properties
 	vec4 vel[DIM_X][DIM_Y];
 	vec4 pressure[DIM_X][DIM_Y];
+
+	// streamline properties
+	vec4 stream_pos[NUM_S_PARTICLES];
 
 	// reserved for debugging
 	vec4 temp[DIM_X];
@@ -41,7 +49,6 @@ layout(std430, binding = 3) volatile buffer sphere_data
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
 };
-
 
 uniform float dist;
 uniform int num_sphere;
@@ -147,28 +154,38 @@ vec3 getColor(float v) {
 
 }
 
-#define rho 1
-#define mu 1
-#define Re(v,x) sqrt(rho*v*x/mu)
-#define delta99(x,v,L) 0
-#define u(x,y) ( sqrt(mu/rho/x)*5.0*x/y ) * ( sqrt(mu/rho/x)*5.0*x/y )
+
 void main(){
 
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+	
+	vec4 pixel = imageLoad(img_output, pixel_coords);
 
 	int posx = pixel_coords.x; // addressable to pixel, may need change
 	int posy = pixel_coords.y; // if grid coords are diff from RES
+	//pressure[posx][posy] = pixel;
 
-	vec4 pixel = vec4(0);
 
 	// black screen on working ssbo
 	if ( isWall( pos[posx][posy].xy ) == 1 ){
-
+		pixel = vec4(0);
 	}else{
-		pixel.xyz = getColor(vel[posx][posy].x);
+
+		if (pixel.w > 0){
+
+			pixel.xyz *= 0.8;
+			pixel.w -= 0.1;
+		
+		}else{
+			pixel.xyz = getColor(vel[posx][posy].x);
+			pixel.w = 0;
+
+		}
+
+
 	}
 	
-	
+	//pressure[posx][posy] = pixel;
 	imageStore(img_output, pixel_coords, pixel);
 
 }

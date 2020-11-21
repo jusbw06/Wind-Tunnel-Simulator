@@ -59,5 +59,8 @@
     <None Include="..\resources\compute_grid.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\resources\compute_streamline.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

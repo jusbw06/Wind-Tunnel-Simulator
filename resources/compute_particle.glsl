@@ -12,7 +12,9 @@ layout(rgba32f, binding = 1) uniform image2D img_output;								//output image
 #define DIM_Y 1080
 #define XDIM 10
 #define YDIM 5.625
-#define XY_SCALE DIM_X/XDIM
+#define XY_SCALE 192
+
+#define NUM_S_PARTICLES 256
 
 #define PI 3.14159265
 #define MAX_SPHERE 100
@@ -26,6 +28,9 @@ layout (std430, binding=2) volatile buffer grid_data
 	vec4 vel[DIM_X][DIM_Y];
 	vec4 pressure[DIM_X][DIM_Y];
 
+	// streamline properties
+	vec4 stream_pos[NUM_S_PARTICLES];
+
 	// reserved for debugging
 	vec4 temp[DIM_X];
 
@@ -35,13 +40,13 @@ layout (std430, binding=2) volatile buffer grid_data
 	int mouse_y;
 
 };
+
 layout(std430, binding = 3) volatile buffer sphere_data
 {
 	vec2 positionSphere[MAX_SPHERE];
 	vec2 velocitySphere[MAX_SPHERE];
 	vec2 accelerationSphere[MAX_SPHERE];
 };
-
 
 uniform float dist;
 uniform int num_sphere;

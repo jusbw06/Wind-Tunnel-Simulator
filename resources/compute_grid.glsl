@@ -1,5 +1,8 @@
 #version 450 
-layout(local_size_x = 1, local_size_y = 2) in;	
+#extension GL_ARB_shader_storage_buffer_object : require
+#extension GL_ARB_arrays_of_arrays : require
+
+layout(local_size_x = 1, local_size_y = 1) in;	
 
 
 #define RESX 1920
@@ -8,7 +11,9 @@ layout(local_size_x = 1, local_size_y = 2) in;
 #define DIM_Y 1080
 #define XDIM 10
 #define YDIM 5.625
-#define XY_SCALE DIM_X/XDIM
+#define XY_SCALE 192
+
+#define NUM_S_PARTICLES 256
 
 #define PI 3.14159265
 #define MAX_SPHERE 100
@@ -22,6 +27,9 @@ layout (std430, binding=2) volatile buffer grid_data
 	vec4 vel[DIM_X][DIM_Y];
 	vec4 pressure[DIM_X][DIM_Y];
 
+	// streamline properties
+	vec4 stream_pos[NUM_S_PARTICLES];
+
 	// reserved for debugging
 	vec4 temp[DIM_X];
 
@@ -31,6 +39,7 @@ layout (std430, binding=2) volatile buffer grid_data
 	int mouse_y;
 
 };
+
 layout(std430, binding = 3) volatile buffer sphere_data
 {
 	vec2 positionSphere[MAX_SPHERE];
@@ -104,7 +113,7 @@ vec2 interpolate_velocity(float abs_vel, uint grid_x, uint grid_y, float L){
 
 	//abs_vel = 1;
 
-	width = (l(pos[grid_x][grid_y].x) - lneg(pos[grid_x][grid_y].x));
+	width = (l(pos[grid_x][grid_y].x) - lneg(pos[grid_x][grid_y].x))/2;
 	dc = pos[grid_x][grid_y].y; // distance to center
 	if (dc < 0){
 		dc *= -1;
@@ -135,11 +144,13 @@ vec2 getSpherePos(vec2 spherePos) {
 	return spherePos;
 }
 
+
 #define MASS_FLOW 1.0
 void main(){
 
 	uint posx = gl_GlobalInvocationID.x;
 	uint posy = gl_GlobalInvocationID.y;
+
 
 	//pos[posx][posy].z = l(pos[posx][posy].x);
 	//pos[posx][posy].w = lneg(pos[posx][posy].x);
