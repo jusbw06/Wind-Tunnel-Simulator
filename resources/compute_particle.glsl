@@ -125,6 +125,13 @@ vec3 projectUonV(vec4 v1, vec4 v2) {
 	return r;
 }
 
+
+void separate(uint A, int B) {
+	vec2 between = normalize(positionSphere[A].xy - positionSphere[B].xy);
+	between = between * (RADIUS * positionSphere[A].z + RADIUS * positionSphere[B].z - distance(positionSphere[A].xy, positionSphere[B].xy));
+	positionSphere[A].xy = positionSphere[A].xy + between * 2;
+}
+
 void main(){
 
 	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
@@ -156,17 +163,13 @@ void main(){
 			vec4 b = vec4(vec2(positionSphere[i].xy - positionSphere[index].xy), 0, 0);
 
 			
-			velocitySphere[i].xy += projectUonV(vec4(velocitySphere[index], 0, 0), a).xy / positionSphere[i].z * VMUL;
-			velocitySphere[i].xy -= projectUonV(vec4(velocitySphere[i], 0, 0), b).xy / positionSphere[i].z * VMUL;
+		//	velocitySphere[i].xy += projectUonV(vec4(velocitySphere[index], 0, 0), a).xy / positionSphere[i].z * VMUL;
+		//	velocitySphere[i].xy -= projectUonV(vec4(velocitySphere[i], 0, 0), b).xy / positionSphere[i].z * VMUL;
 
 			velocitySphere[index].xy += projectUonV(vec4(velocitySphere[i], 0, 0), a).xy / positionSphere[index].z * VMUL;
 			velocitySphere[index].xy -= projectUonV(vec4(velocitySphere[index], 0, 0), b).xy / positionSphere[index].z * VMUL;
 
-			//accelerationSphere[i].xy += projectUonV(vec4(velocitySphere[index], 0, 0), a).xy / positionSphere[i].z * VMUL;
-			//accelerationSphere[i].xy -= projectUonV(vec4(velocitySphere[i], 0, 0), b).xy / positionSphere[i].z * VMUL;
-
-			//accelerationSphere[index].xy += projectUonV(vec4(velocitySphere[i], 0, 0), a).xy / positionSphere[index].z * VMUL;
-			//accelerationSphere[index].xy -= projectUonV(vec4(velocitySphere[index], 0, 0), b).xy / positionSphere[index].z * VMUL; 
+			separate(index, i);
 		}
 	}
 
