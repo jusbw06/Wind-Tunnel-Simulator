@@ -53,9 +53,6 @@ layout(std430, binding = 3) volatile buffer sphere_data
 	int mouse_x;
 	int mouse_y;
 	int numSphere;
-	int t;
-
-	vec4 sphere_temp[MAX_SPHERE];  
 };
 
 uniform float dist;
@@ -143,53 +140,6 @@ void separate(uint A, int B) {
 	between = between * (RADIUS * positionSphere[A].z + RADIUS * positionSphere[B].z - distance(a, b));
 	positionSphere[A].xy = positionSphere[A].xy + between * 2;
 }
-// in vec2 particle position
-// in radius
-int isWallCollision( vec2 sphere_pos, float radius ){
-
-	/* offset slightly */
-	float m = dldx(sphere_pos.x);
-	float x_new = normalize(vec2(1, m)).x * radius + sphere_pos.x;
-
-	sphere_temp[0].w = x_new;
-
-
-	m = dldx(x_new);
-	float y_wall = l(x_new) - (normalize(vec2(-m, 1)) * radius).y;
-	sphere_temp[0].w = y_wall;
-
-
-	if ( y_wall < abs(sphere_pos.y)){ // top and bot
-		return 1;
-	}
-
-	return 0;
-
-}
-
-// in pos, vel, radius
-// out vel
-vec2 performWallCollision(vec2 sphere_pos, float radius, vec2 sphere_vel){
-
-	/* offset slightly */
-	float m = dldx(sphere_pos.x);
-	float x_new = normalize(vec2(1, m)).x * radius + sphere_pos.x;
-
-	/* calculate normal */
-	m = dldx(x_new);
-	vec2 normal;
-	if (sphere_pos.y >= 0){
-		normal = normalize(vec2(-m * 1.75, 1)) * -1;
-	}else if (sphere_pos.y < 0){
-		normal = normalize(vec2(-m * 1.75, -1)) * -1;
-	}
-	//normal = normalize(vec2(-1, -1));
-
-	// r = d - 2(d dot n)n
-	vec2 resultant = sphere_vel.xy - 2*dot(sphere_vel.xy, normal) * normal;
-
-	return resultant;
-}
 
 void main(){
 
@@ -209,32 +159,11 @@ void main(){
 		return;
 
 
-	// check for sphere-boundary collision
-	/* Convert sphere position to parabola dimensions */
-	ivec2 sphere_pixel_pos = ivec2((positionSphere[index].x + 1) / 2.0 * RESX, (positionSphere[index].y + 1) / 2.0 * RESY);
-	vec2 sphere_pos = vec2(sphere_pixel_pos)/XY_SCALE;
-	sphere_pos.y -= float(RESY)/2 / 192;
-
-	sphere_temp[index].xy = sphere_pos;
-
-
-	/* Convert radius position to parabola dimensions */
-	float radius = positionSphere[index].z * 0.02 * 800/192;
-
-	sphere_temp[index].z = radius;
-
-	if ( isWallCollision(sphere_pos, radius) ) {
-		//velocitySphere[index].xy = vec2(0, 0);
-		velocitySphere[index].xy = performWallCollision(sphere_pos, radius, velocitySphere[index].xy);
-	}
-
 	// check for sphere-boundry collision
-	/*ivec2 sphere_pixel_pos = ivec2((positionSphere[index].x + 1) / 2.0 * RESX, (positionSphere[index].y + 1) / 2.0 * RESY);
+	ivec2 sphere_pixel_pos = ivec2((positionSphere[index].x + 1) / 2.0 * RESX, (positionSphere[index].y + 1) / 2.0 * RESY);
 	if (isWall(pos[sphere_pixel_pos.x][sphere_pixel_pos.y].xy) == 1) {
 		velocitySphere[index].xy = vec2(0, 0);
 	}
-	*/
-
 
 	// sphere-sphere collision
 	for (int i = 0; i < numSphere; i++) {
