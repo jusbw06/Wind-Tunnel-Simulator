@@ -76,6 +76,11 @@ public:
 	int mouse_x;
 	int mouse_y;
 	int numSphere;
+	int t;
+
+
+	vec4 sphere_temp[MAX_SPHERE];      // x: xpos, y: ypos z: mass
+
 };
 
 double get_last_elapsed_time()
@@ -604,6 +609,14 @@ public:
 			memcpy(&ssbo_sphere, p, sizeof(ssbo_sphere_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+
+			for (int i = 0; i < num_sphere; i++) {
+				//cout << "X: " << ssbo_sphere.sphere_temp[i].x << " Y: " << ssbo_sphere.sphere_temp[i].y << " R: "<< ssbo_sphere.sphere_temp[i].z << " X_new: " << ssbo_sphere.sphere_temp[i].w << endl;
+				cout << "X: " << ssbo_sphere.sphere_temp[i].x << " Y: " << ssbo_sphere.sphere_temp[i].y << " R: "<< ssbo_sphere.sphere_temp[i].z << " Y_wall: " << ssbo_sphere.sphere_temp[i].w << endl;
+
+			}
+
 
 			flap = !flap;
 			frame_num++;
