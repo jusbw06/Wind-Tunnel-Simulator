@@ -112,7 +112,9 @@ void addArrows(ivec2 pixel_coords, vec2 vel_slope){
 // for particle collision
 
 bool isCollide(vec4 v1, vec4 v2) {
-	vec3 delta = vec3(v1.x, v1.y, 0) - vec3(v2.x, v2.y, 0);
+
+	vec3 delta = vec3(v1.x, v1.y * (float(RESY)/float(RESX)), 0) - vec3(v2.x, v2.y * (float(RESY) / float(RESX)), 0);
+
 	return length(delta) < RADIUS * v1.z + RADIUS * v2.z;
 
 }
@@ -127,8 +129,15 @@ vec3 projectUonV(vec4 v1, vec4 v2) {
 
 
 void separate(uint A, int B) {
-	vec2 between = normalize(positionSphere[A].xy - positionSphere[B].xy);
-	between = between * (RADIUS * positionSphere[A].z + RADIUS * positionSphere[B].z - distance(positionSphere[A].xy, positionSphere[B].xy));
+
+	vec2 a = positionSphere[A].xy;
+	vec2 b = positionSphere[B].xy;
+
+	a.y = a.y * (float(RESY) / float(RESX));
+	b.y = b.y * (float(RESY) / float(RESX));
+
+	vec2 between = normalize(a - b);
+	between = between * (RADIUS * positionSphere[A].z + RADIUS * positionSphere[B].z - distance(a, b));
 	positionSphere[A].xy = positionSphere[A].xy + between * 2;
 }
 
