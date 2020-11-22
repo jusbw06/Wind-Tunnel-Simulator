@@ -213,7 +213,7 @@ void main(){
 	/* Convert radius position to parabola dimensions */
 	float radius = positionSphere[index].z * 0.02 * 800/192;
 
-	if ( isWallCollision(sphere_pos, radius) ) {
+	if ( isWallCollision(sphere_pos, radius) == 1) {
 		//velocitySphere[index].xy = vec2(0, 0);
 		velocitySphere[index].xy = performWallCollision(sphere_pos, radius, velocitySphere[index].xy);
 	}
