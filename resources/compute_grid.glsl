@@ -154,10 +154,12 @@ void main(){
 
 	uint posx = gl_GlobalInvocationID.x;
 	uint posy = gl_GlobalInvocationID.y;
+	
 
-
-	//pos[posx][posy].z = l(pos[posx][posy].x);
-	//pos[posx][posy].w = lneg(pos[posx][posy].x);
+	if (posx == 0 && posy == 0) {
+		mouseVelocity = vel[mouse_x][mouse_y].xy;
+		mousePressure = pressure[mouse_x][mouse_y].xy;
+	}
 
 	if ( isWall(pos[posx][posy].xy) == 1 ){
 		//isInvalid
@@ -188,37 +190,9 @@ void main(){
 	pressure[posx][posy].x = 0.5 * 1 * vel[posx][posy].x * vel[posx][posy].x;
 
 
-	if (posx < numSphere) {
+	if (posy == 540 && posx < numSphere) {
 		vec2 spherePos = getSpherePos(positionSphere[posx].xy);
 		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy / positionSphere[posx].z * 1.5;
-	//	velocitySphere[posx] += vel[int(spherePos.x)][int(spherePos.y)].xy / positionSphere[posx].z * 1.5;
-	}
-
-	if (posx == 0 && posy == 0) {
-		mouseVelocity = vel[mouse_x][mouse_y].xy;
-		mousePressure = pressure[mouse_x][mouse_y].xy;
 	}
 
 }
-
-/*
-
-#define rho 1
-#define mu 1
-#define Re(v,x) sqrt(rho*v*x/mu)
-#define delta99(x,v,L) 0
-#define u(x,y) ( sqrt(mu/rho/x)*5.0*x/y ) * ( sqrt(mu/rho/x)*5.0*x/y )
-	float b = (540 + lneg(float(pixel_coords.x) / 192) * 192);
-	float a = (540 + l(float(pixel_coords.x) / 192) * 192);
-
-	//float pixelVelocity = sin((pixel_coords.y - b) / (a - b) * PI) * vel[pos_index].x; // MAXVELOCITY 
-
-	float pixelVelocity;
-
-	float delta99 = 5.0 * pixel_coords.x /Re(vel[pos_index].x,pixel_coords.x);
-	if (pixel_coords.y > delta99){
-		pixelVelocity = vel[pos_index].x;
-	}else{
-		pixelVelocity = u(pixel_coords.x, pixel_coords.y);
-	}
-*/
