@@ -191,17 +191,11 @@ public:
 	{
 		double posX, posY;
 		glfwGetCursorPos(window, &posX, &posY);
-		static double LposX = posX, LposY = posY;
 
-		float newPt[2];
 		mousepressed = false;
 		if (action == GLFW_PRESS)
 		{
 			mousepressed = true;
-			double dx = posX - LposX;
-			double dy = posY - LposY;
-			std::cout << "Pos X " << posX << " Pos Y " << posY << std::endl;
-			cout << "Vel: " << ssbo.vel[(int)posX][(int)posY].x << "m/s, Gauge Pressure: -" << ssbo.pressure[(int)posX][(int)posY].x << "Pa" << endl;
 
 			mouse_current_x = posX;
 			mouse_current_y = posY;
@@ -218,11 +212,6 @@ public:
 			ssbo_sphere.mouse_y = posY;
 
 		}
-		if (action == GLFW_RELEASE) {
-			mousepressed = false;
-		}
-		LposX = posX;
-		LposY = posY;
 	}
 
 	//if the window is resized, capture the new size and reset the viewport
@@ -599,11 +588,17 @@ public:
 			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
 
+			// Copy data from GPU to CPU
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
 			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
 			memcpy(&ssbo_sphere, p, sizeof(ssbo_sphere_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+			if (mousepressed) {
+				mousepressed = false;
+				cout << "Vel: " << length(ssbo_sphere.mouseVelocity) << "m/s, Gauge Pressure: -" << ssbo_sphere.mousePressure.x << "Pa" << endl;
+			}
 
 			flap = !flap;
 			frame_num++;
