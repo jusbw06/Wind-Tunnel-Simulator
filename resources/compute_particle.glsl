@@ -146,7 +146,7 @@ void main(){
 
 	uint index = pixel_coords.x;
 
-	if (index > numSphere)
+	if (index >= numSphere)
 		return;
 
 
@@ -157,7 +157,7 @@ void main(){
 	}
 
 	// sphere-sphere collision
-	for (int i = 0; i < num_sphere; i++) {
+	for (int i = 0; i < numSphere; i++) {
 		if (i != index && isCollide(positionSphere[i], positionSphere[index])) {
 			vec4 a = vec4(vec2(positionSphere[index].xy - positionSphere[i].xy), 0, 0);
 			vec4 b = vec4(vec2(positionSphere[i].xy - positionSphere[index].xy), 0, 0);

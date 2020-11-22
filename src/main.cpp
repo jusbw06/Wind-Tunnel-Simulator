@@ -535,14 +535,14 @@ public:
 			static bool flap = 1;
 
 			/* Copy from CPU to GPU */
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			/*glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
 			memcpy(p, &ssbo, sizeof(ssbo_data));
-			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);*/
 
 
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
-			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
 			memcpy(p, &ssbo_sphere, sizeof(ssbo_sphere_data));
 			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
@@ -592,11 +592,11 @@ public:
 			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
 			/* Copy from GPU to CPU */
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-			memcpy(&ssbo, p, sizeof(ssbo_data));
-			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			//p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			//memcpy(&ssbo, p, sizeof(ssbo_data));
+			//glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
 
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
