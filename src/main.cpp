@@ -40,6 +40,7 @@ GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram, comput
 #define NUM_SPHERE 100
 #define MAX_SPHERE 100
 #define NUM_S_PARTICLES 256
+#define RADIUS 0.02
 
 
 class ssbo_data
@@ -390,6 +391,17 @@ public:
 			ssbo_sphere.accelerationSphere[i] = vec2(0, 0);
 		}
 
+		//ssbo_sphere.numSphere = 3;
+		//ssbo_sphere.positionSphere[0] = vec4(0, 0, 1, 0);
+		////ssbo_sphere.positionSphere[1] = vec4(0.04, 0, 1, 0);
+		////ssbo_sphere.positionSphere[2] = vec4(0.08, 0, 1, 0);
+		////ssbo_sphere.positionSphere[3] = vec4(-0.5, 0, 1, 0);
+		////ssbo_sphere.velocitySphere[3] = vec2(0.1, 0);
+		//ssbo_sphere.positionSphere[1] = vec4(-0.2, 0, 1, 0);
+		//ssbo_sphere.velocitySphere[1] = vec2(0.1, 0);
+		//ssbo_sphere.positionSphere[2] = vec4(0.2, 0, 1, 0);
+		//ssbo_sphere.velocitySphere[2] = vec2(-0.1, 0);
+
 	}
 
 	float randf(float shift = 0)
@@ -607,9 +619,90 @@ public:
 
 	}
 
+	void solveCollision() {
+		vector<ivec2> contacts;
+
+		for (int i = 0; i < ssbo_sphere.numSphere; i++) {
+			for (int j = i + 1; j < ssbo_sphere.numSphere; j++) {
+				if (isCollide(ssbo_sphere.positionSphere[i], ssbo_sphere.positionSphere[j])) {
+					float massA = ssbo_sphere.positionSphere[i].z;
+					float massB = ssbo_sphere.positionSphere[j].z;
+					vec2 iVelA = vec2(ssbo_sphere.velocitySphere[i].x, ssbo_sphere.velocitySphere[i].y);
+					vec2 iVelB = vec2(ssbo_sphere.velocitySphere[j].x, ssbo_sphere.velocitySphere[j].y);
+					vec2 p = iVelA * massA + iVelB * massB;
+					
+					if (iVelA.x * iVelB.x < 0 || iVelA.y * iVelB.y < 0 || length(p) < 0.01) {
+						continue;
+					} 
+
+					contacts.push_back(ivec2(i, j));
+
+				}
+			}
+		}
+
+		// solving n-body problem
+		for (int i = 0; i < contacts.size(); i++) {
+			for (auto contact : contacts) {
+				int A = contact.x;
+				int B = contact.y;
+				float massA = ssbo_sphere.positionSphere[A].z;
+				float massB = ssbo_sphere.positionSphere[B].z;
+				vec2 iVelA = vec2(ssbo_sphere.velocitySphere[A].x, ssbo_sphere.velocitySphere[A].y);
+				vec2 iVelB = vec2(ssbo_sphere.velocitySphere[B].x, ssbo_sphere.velocitySphere[B].y);
+
+
+				//float pix = iVelA.x * massA + iVelB.x * massB;
+				//float piy = iVelA.y * massA + iVelB.y * massB;
+
+				//vec2 p = vec2(pix, piy);
+
+				//vec2 fVelA = vec2((pix - massB * (iVelA.x - iVelB.x)) / (massA + massB), (piy - massB * (iVelA.y - iVelB.y)) / (massA + massB)) * -1.0f;
+				//vec2 fVelB = vec2(fVelA.x + iVelA.x - iVelB.x, fVelA.y + iVelA.y - iVelB.y) * -0.1f;
+
+				vec2 fVelA = (massA - massB) / (massA + massB) * iVelA + 2.0f * massB / (massA + massB) * iVelB;
+				vec2 fVelB = 2.0f * massA / (massA + massB) * iVelA + (massB - massA) / (massA + massB) * iVelB;
+
+
+				
+
+				ssbo_sphere.velocitySphere[A].x = fVelA.x;
+				ssbo_sphere.velocitySphere[A].y = fVelA.y;
+				ssbo_sphere.velocitySphere[B].x = fVelB.x;
+				ssbo_sphere.velocitySphere[B].y = fVelB.y;
+
+			}
+		}
+		
+		
+	}
+
+	void separate(uint A, int B) {
+
+		vec2 a = vec2(ssbo_sphere.positionSphere[A].x, ssbo_sphere.positionSphere[A].y);
+		vec2 b = vec2(ssbo_sphere.positionSphere[B].x, ssbo_sphere.positionSphere[B].y);
+
+		a.y = a.y * (float(RESY) / float(RESX));
+		b.y = b.y * (float(RESY) / float(RESX));
+
+		vec2 between = normalize(a - b);
+		between = between * float(RADIUS * ssbo_sphere.positionSphere[A].z + RADIUS * ssbo_sphere.positionSphere[B].z - distance(a, b));
+		ssbo_sphere.positionSphere[A].x = ssbo_sphere.positionSphere[A].x + between.x * 2;
+		ssbo_sphere.positionSphere[A].y = ssbo_sphere.positionSphere[A].y + between.y * 2;
+	}
+
+	bool isCollide(vec4 v1, vec4 v2) {
+		float ratio = float(RESY) / float(RESX);
+		vec3 delta = vec3(v1.x, v1.y * ratio, 0) - vec3(v2.x, v2.y * ratio, 0);
+
+		return glm::length(delta) < RADIUS * v1.z + RADIUS * v2.z;
+	}
+
 	void update(int i, float delta_t) {
 	//	ssbo.spos[i].x += ssbo.svel[i].x * delta_t;
 	//	ssbo.spos[i].y += ssbo.svel[i].y * delta_t;
+
+		solveCollision();
 
 		ssbo_sphere.velocitySphere[i].x += ssbo_sphere.accelerationSphere[i].x * delta_t;
 		ssbo_sphere.velocitySphere[i].y += ssbo_sphere.accelerationSphere[i].y * delta_t;

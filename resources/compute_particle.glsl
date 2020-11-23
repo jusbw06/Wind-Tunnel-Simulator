@@ -220,21 +220,17 @@ void main(){
 
 
 	// sphere-sphere collision
-	for (int i = 0; i < numSphere; i++) {
-		if (i != index && isCollide(positionSphere[i], positionSphere[index])) {
-			vec4 a = vec4(vec2(positionSphere[index].xy - positionSphere[i].xy), 0, 0);
-			vec4 b = vec4(vec2(positionSphere[i].xy - positionSphere[index].xy), 0, 0);
+	//for (int i = 0; i < numSphere; i++) {
+	//	if (i != index && isCollide(positionSphere[i], positionSphere[index])) {
+	//		vec4 a = vec4(vec2(positionSphere[index].xy - positionSphere[i].xy), 0, 0);
+	//		vec4 b = vec4(vec2(positionSphere[i].xy - positionSphere[index].xy), 0, 0);
 
-			
-		//	velocitySphere[i].xy += projectUonV(vec4(velocitySphere[index], 0, 0), a).xy / positionSphere[i].z * VMUL;
-		//	velocitySphere[i].xy -= projectUonV(vec4(velocitySphere[i], 0, 0), b).xy / positionSphere[i].z * VMUL;
+	//		velocitySphere[index].xy += projectUonV(vec4(velocitySphere[i], 0, 0), a).xy / positionSphere[index].z * VMUL;
+	//		velocitySphere[index].xy -= projectUonV(vec4(velocitySphere[index], 0, 0), b).xy / positionSphere[index].z * VMUL;
 
-			velocitySphere[index].xy += projectUonV(vec4(velocitySphere[i], 0, 0), a).xy / positionSphere[index].z * VMUL;
-			velocitySphere[index].xy -= projectUonV(vec4(velocitySphere[index], 0, 0), b).xy / positionSphere[index].z * VMUL;
-
-			separate(index, i);
-		}
-	}
+	//		separate(index, i);
+	//	}
+	//}
 
 
 }
