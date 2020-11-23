@@ -162,7 +162,7 @@ int isWallCollision( vec2 sphere_pos, float radius ){
 
 // in pos, vel, radius
 // out vel
-vec2 performWallCollision(vec2 sphere_pos, float radius, vec2 sphere_vel){
+vec2 performWallCollision(vec2 sphere_pos, float radius, vec2 sphere_vel, uint indexOfSphere){
 
 	/* offset slightly */
 	float m = dldx(sphere_pos.x);
@@ -177,6 +177,14 @@ vec2 performWallCollision(vec2 sphere_pos, float radius, vec2 sphere_vel){
 		normal = normalize(vec2(-m * 1.75, -1)) * -1;
 	}
 	//normal = normalize(vec2(-1, -1));
+
+	float offset = min(abs(sphere_pos.y - dldx(x_new)), abs(sphere_pos.y + dldx(x_new)));
+
+	offset = radius - offset;
+
+	int offsetMul = normal.y > 0 ? -1 : 1;
+
+	positionSphere[indexOfSphere].y += (offset/float(RESY) * 2 - 1) * offsetMul * 0.001;
 
 	// r = d - 2(d dot n)n
 	vec2 resultant = sphere_vel.xy - 2*dot(sphere_vel.xy, normal) * normal;
@@ -215,7 +223,7 @@ void main(){
 
 	if ( isWallCollision(sphere_pos, radius) == 1) {
 		//velocitySphere[index].xy = vec2(0, 0);
-		velocitySphere[index].xy = performWallCollision(sphere_pos, radius, velocitySphere[index].xy);
+		velocitySphere[index].xy = performWallCollision(sphere_pos, radius, velocitySphere[index].xy, index);
 	}
 
 
