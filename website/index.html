@@ -9,6 +9,11 @@
       padding-left: 100px;  
     }  
 
+    div {
+        margin-left: 10%;
+        margin-right: 10%;
+    }
+
     table.num_table {
       font-family: arial, sans-serif;
       border-collapse: collapse;
@@ -23,6 +28,21 @@
     table.num_table tr:nth-child(even) {
         background-color: #dddddd;
     }
+
+    video {
+        width: 100%    !important;
+        height: auto   !important;
+    }
+
+    h2 {
+        border-bottom: 1px solid black;
+    }
+
+    img {
+        width: 100%;
+        height: auto;
+    }
+
 </style> 
 
 <title>CSC 572 Final Project</title>
@@ -32,7 +52,10 @@
 <body>
 <br />
 <h1 align="middle">Wind Tunnel Simulation</h1>
-    <h2 align="middle">Justin Wheeler, Sherry Lin, Nathan Irwin</h2>
+    <div class="padded">
+        <h2 align="middle">Justin Wheeler, Sherry Lin, Nathan Irwin</h2>
+    </div>
+    
 
     <div class="padded">
         <p>For the final project, we created a wind tunnel simulation. Particles can be spawn with mouse clicks. The size of the tunnel can be adjusted with mouse wheel scrolls.</p>
@@ -44,12 +67,12 @@
             <table style="width=100%">
                 <tr>
                     <td align="middle">
-                    <img src="images/5-1.png" width="800px" />
+                    <img src="images/5-1.png" />
                     <figcaption align="middle">a bird's eye view</figcaption>
 
                 
                 
-                <video width="800" height="600" controls>
+                <video controls>
                     <source src="video/video.mp4" type="video/mp4">
                 
                 
@@ -62,7 +85,7 @@
     <h2 align="middle">Section 1</h2>
         <p>stuff</p>
         <div align="center">
-            <table style="width=100%">
+            <table style="width=100% height=auto">
                 <tr>
                     <td align="middle">
                     <img src="images/1-1.png" width="800px" />
@@ -85,7 +108,7 @@
             <table style="width=100%">
                 <tr>
                     <td align="middle">
-                    <img src="images/2-1.png" width="800px" />
+                    <img src="images/2-1.png"/>
                     <figcaption align="middle">caption_holder</figcaption>
 
                 </tr>
@@ -95,47 +118,43 @@
 
     <h2 align="middle">Collision Detection</h2>
 
-    <h3 align="middle">Particle-Boundry Collision Detection</h3>
-    <h3 align="middle">N-Body Collision for Particles</h3>
+    <h3 align="middle">Particle-Boundry Collision</h3>
+
+    <div>
+        <video controls>
+            <source src="video/BoundaryCollision.mp4" type="video/mp4">
+        </video>
+    
+    </div>
+    
+    <h3 align="middle">N-Body Collision</h3>
 
     <p></p>
 
         <div align="center">
 
-            <video width="800" height="600" controls>
+            <video controls>
                 <source src="video/3-body.mp4" type="video/mp4">
             </video>
 
-            <video width="800" height="600" controls>
+            <video controls>
                 <source src="video/4-body.mp4" type="video/mp4">
             </video>
 
             <table style="width=100%">
                 <tr>
                     <td align="middle">
-                    <img src="images/3-1.png" width="800px" />
+                    <img src="images/3-1.png"/>
                     <figcaption align="middle">caption_holder</figcaption>
 
                     <td align="middle">
-                    <img src="images/3-2.png" width="800px" />
+                    <img src="images/3-2.png"/>
                     <figcaption align="middle">caption_holder</figcaption>
                 </tr>
                 
             </table>
         </div>
 
-    <div align="center">
-    <h2>Boundary Collisions</h2>
-    <table>
-        <tr>            
-            <td align="middle">
-                <video width="800" height="600" controls>
-                    <source src="video/BoundaryCollision.mp4" type="video/mp4">
-                </video>
-            </td>
-        </tr>
-    </table>
-    </div>
 
     <div align="center">
     <h2>HeatMap</h2>
@@ -144,15 +163,16 @@
         <p>Press 1 to toggle between Pressure and Velocity</p>
         <p>Default Setting: Pressure</p>
 
+        <h4>Pressure</h4>
+        <img src="images/Pressure.png"/>
+        <p>Higher Pressure: Blue</p>
 
             <td align="middle">
-                <h4>Pressure</h4>
-                <img src="images/Pressure.png" width="800px" />
-                <p>Higher Pressure: Blue</p>
+                
             </td>
             <td align="middle">
                 <h4>Velocity</h4>
-                <img src="images/Velocity.png" width="800px" />
+                <img src="images/Velocity.png"/>
                 <p>Lower Velocity: Blue</p>
             </td>
 
@@ -167,7 +187,7 @@
         <tr>            
             <td align="middle">
                 <h4>Particles</h4>
-                <video width="800" height="600" controls>
+                <video controls>
                     <source src="video/Particles.mp4" type="video/mp4">
                 </video>
                 <p>Press 2 to toggle Particles</p>
@@ -175,7 +195,7 @@
             </td>
             <td align="middle">
                 <h4>Arrows</h4>
-                <video width="800" height="600" controls>
+                <video controls>
                     <source src="video/Arrows2.mp4" type="video/mp4">
                 </video>                
                 <p>Press 3 to toggle Arrows</p>
@@ -191,13 +211,13 @@
         <tr>            
             <td style="text-align:center;vertical-align:top">
                 <h2>Navier-Stokes: Continuity Equation</h2>
-                <img src="images/Continuity Equation.png" width="800px" />
+                <img src="images/Continuity Equation.png"/>
 
                 <p></p>
             </td>
             <td style="text-align:center;vertical-align:top">
                 <h2>Source & Sink</h2>
-                <img src="images/Source & Sink.png" width="500px" />
+                <img src="images/Source & Sink.png"/>
 
                 <p></p>
             </td>
