@@ -162,7 +162,7 @@ void main(){
 	pressure[posx][posy].x = -0.5 * 1 * vel[posx][posy].x * vel[posx][posy].x;
 
 
-	if (posy == 540 && posx < numSphere) {
+	if (posy == 540 && posx < num_sphere) {
 		vec2 spherePos = getSpherePos(positionSphere[posx].xy);
 		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy / positionSphere[posx].z * 1.5;
 

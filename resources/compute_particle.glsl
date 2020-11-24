@@ -202,7 +202,7 @@ void main(){
 
 	uint index = pixel_coords.x;
 
-	if (index >= numSphere)
+	if (index >= num_sphere)
 		return;
 
 
@@ -220,6 +220,8 @@ void main(){
 		//velocitySphere[index].xy = vec2(0, 0);
 		velocitySphere[index].xy = performWallCollision(sphere_pos, radius, velocitySphere[index].xy, index);
 	}
+
+
 
 
 }

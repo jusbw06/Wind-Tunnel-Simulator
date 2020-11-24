@@ -5,6 +5,7 @@ CPE/CSC 471 Lab base code Wood/Dunn/Eckhardt
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -238,6 +239,8 @@ public:
 			ssbo_sphere.mouse_x = posX;
 			ssbo_sphere.mouse_y = posY;
 
+		//	cout << ssbo_sphere.numSphere << endl;
+
 		}
 	}
 
@@ -409,6 +412,7 @@ public:
 
 		// init spheres in ssbo
 		num_sphere = 0;
+		ssbo_sphere.numSphere = 0;
 		for (int i = 0; i < MAX_SPHERE; i++) {
 			ssbo.spos[i] = vec4(0, 0, 0, 1);
 			ssbo.svel[i] = vec4(0, -1, 0, 1);
@@ -671,8 +675,8 @@ public:
 	void solveCollision() {
 		vector<ivec2> contacts;
 
-		for (int i = 0; i < ssbo_sphere.numSphere; i++) {
-			for (int j = i + 1; j < ssbo_sphere.numSphere; j++) {
+		for (int i = 0; i < num_sphere; i++) {
+			for (int j = i + 1; j < num_sphere; j++) {
 				if (isCollide(ssbo_sphere.positionSphere[i], ssbo_sphere.positionSphere[j])) {
 					separate(i, j);
 					float massA = ssbo_sphere.positionSphere[i].z;
@@ -755,22 +759,43 @@ public:
 		return D;
 	}
 
+	bool outOfScreen(int idx) {
+		if (ssbo_sphere.positionSphere[idx].x < -1.2f || ssbo_sphere.positionSphere[idx].x > 1.2f
+			|| ssbo_sphere.positionSphere[idx].y < -1.2f || ssbo_sphere.positionSphere[idx].y > 1.2f) {
+			
+			return true;
+		}
+		return false;
+	}
+
+	void removeSphere(int idx) {
+		for (int i = idx; i < num_sphere; i++) {
+			ssbo_sphere.positionSphere[i] = ssbo_sphere.positionSphere[i + 1];
+			ssbo_sphere.velocitySphere[i] = ssbo_sphere.velocitySphere[i + 1];
+			ssbo_sphere.accelerationSphere[i] = ssbo_sphere.accelerationSphere[i + 1];
+		}
+
+		num_sphere -= 1;
+	}
 
 	void update(int i, float delta_t) {
-	//	ssbo.spos[i].x += ssbo.svel[i].x * delta_t;
-	//	ssbo.spos[i].y += ssbo.svel[i].y * delta_t;
 
+		cout << num_sphere << endl;
+
+		if (outOfScreen(i)) {
+			removeSphere(i);
+			return;
+		}
+
+			
 		solveCollision();
 
 		ssbo_sphere.velocitySphere[i].x += ssbo_sphere.accelerationSphere[i].x * delta_t;
 		ssbo_sphere.velocitySphere[i].y += ssbo_sphere.accelerationSphere[i].y * delta_t;
 
-		//cout << ssbo_sphere.positionSphere[i].x << ssbo_sphere.positionSphere[i].y << endl;
 
 		ssbo_sphere.positionSphere[i].x += ssbo_sphere.velocitySphere[i].x * delta_t;
 		ssbo_sphere.positionSphere[i].y += ssbo_sphere.velocitySphere[i].y * delta_t;
-
-
 
 
 
@@ -785,8 +810,10 @@ public:
 
 		float radius = ssbo_sphere.positionSphere[i].z * RADIUS * 800.0f / 192.0f;
 		ssbo_sphere.dP[i] = getDrag(i) / (radius * radius * PI);
+
+
 		//cout << ssbo_sphere.dP[i] << endl;
-		
+
 	}
 
 	//*****************************************************************************************
@@ -824,7 +851,7 @@ public:
 
 		float frametime = get_last_elapsed_time();
 
-		for (int i = 0; i < ssbo_sphere.numSphere; i++) {
+		for (int i = 0; i < num_sphere; i++) {
 			update(i, frametime);
 
 			//vec3 pos = ssbo.spos[i];
@@ -838,6 +865,7 @@ public:
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, SphereTexture);
 			sphere->draw(prog, FALSE);
+			
 		}
 
 		prog->unbind();
