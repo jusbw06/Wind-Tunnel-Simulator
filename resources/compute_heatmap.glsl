@@ -87,7 +87,7 @@ vec3 getColor(int posx, int posy, int id) {
 
 	float a;
 	if (id == 0){ // velocity
-		a = (1 - length(pressure[posx][posy].zw)) * 4;
+		a = (0.5 - length(pressure[posx][posy].zw)) * 8;
 	}else if (id == 1){ // pressure
 		a = (.125 - abs(pressure[posx][posy].x)) * 32;
 	}
