@@ -49,6 +49,7 @@ layout(std430, binding = 3) volatile buffer sphere_data
 	vec2 accelerationSphere[MAX_SPHERE];
 	vec2 mouseVelocity;
 	vec2 mousePressure;
+	float drag[MAX_SPHERE];
 
 	int mouse_x;
 	int mouse_y;

@@ -17,6 +17,7 @@ layout(local_size_x = 1, local_size_y = 1) in;
 
 #define PI 3.14159265
 #define MAX_SPHERE 100
+#define RADIUS 0.02
 
 layout (std430, binding=2) volatile buffer grid_data
 { 
@@ -45,6 +46,7 @@ layout(std430, binding = 3) volatile buffer sphere_data
 	vec2 accelerationSphere[MAX_SPHERE];
 	vec2 mouseVelocity;
 	vec2 mousePressure;
+	float drag[MAX_SPHERE];
 
 	int mouse_x;
 	int mouse_y;
@@ -194,5 +196,6 @@ void main(){
 		vec2 spherePos = getSpherePos(positionSphere[posx].xy);
 		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy / positionSphere[posx].z * 1.5;
 	}
+
 
 }

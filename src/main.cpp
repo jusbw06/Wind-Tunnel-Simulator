@@ -73,6 +73,7 @@ public:
 	vec2 accelerationSphere[MAX_SPHERE];
 	vec2 mouseVelocity;
 	vec2 mousePressure;
+	float drag[MAX_SPHERE];
 
 	int mouse_x;
 	int mouse_y;
@@ -688,6 +689,22 @@ public:
 		return glm::length(delta) < RADIUS * v1.z + RADIUS * v2.z;
 	}
 
+	float getDrag(int idx) {
+		float radius = ssbo_sphere.positionSphere[idx].z * RADIUS;
+
+		float Re = length(ssbo_sphere.velocitySphere[idx]) * 1.225 * 2.0f * radius / 1.789e-5;
+		float Cd;
+
+		if (Re < 0.2)
+			Cd = 24.0f / Re;
+		else
+			Cd = 21.12f / Re + 6.3f / sqrt(Re) + 0.25f;
+
+		float D = Cd * 0.5f * 1.225f * pow(length(ssbo_sphere.velocitySphere[idx]), 2) * 3.1415926 * radius * radius;
+
+		return D;
+	}
+
 	void update(int i, float delta_t) {
 	//	ssbo.spos[i].x += ssbo.svel[i].x * delta_t;
 	//	ssbo.spos[i].y += ssbo.svel[i].y * delta_t;
@@ -701,6 +718,8 @@ public:
 
 		ssbo_sphere.positionSphere[i].x += ssbo_sphere.velocitySphere[i].x * delta_t;
 		ssbo_sphere.positionSphere[i].y += ssbo_sphere.velocitySphere[i].y * delta_t;
+
+		ssbo_sphere.drag[i] = getDrag(i);
 	}
 
 	//*****************************************************************************************
