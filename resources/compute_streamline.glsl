@@ -45,6 +45,7 @@ layout (std430, binding=2) volatile buffer grid_data
 uniform float dist;
 uniform int num_sphere;
 uniform int frame_num;
+uniform int display_particles;
 
 float l(float x) {
 	return (0.0725 * x * x - 0.725 * x + 2.8125 - dist);
@@ -74,6 +75,11 @@ int isWall(vec2 pos){
 #define dt 0.1
 #define PARTICLE_RATE 25
 void main(){
+
+
+	if (display_particles == 0){
+		return;
+	}
 
 	int index = int(gl_GlobalInvocationID.x);
 

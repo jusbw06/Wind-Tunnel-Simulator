@@ -48,15 +48,19 @@ layout(std430, binding = 3) volatile buffer sphere_data
 	vec2 accelerationSphere[MAX_SPHERE];
 	vec2 mouseVelocity;
 	vec2 mousePressure;
-	float drag[MAX_SPHERE];
 
 	int mouse_x;
 	int mouse_y;
 	int numSphere;
+	int temp_sphere;
+
+	ivec2 sphere_coords[MAX_SPHERE];
+	float dP[MAX_SPHERE];
 };
 
 uniform float dist;
 uniform int num_sphere;
+uniform int heatmap_toggle;
 
 
 float l(float x) {
@@ -65,40 +69,6 @@ float l(float x) {
 #define lneg(x) (-1 * l(x)) 
 #define dldx(x) (0.145*x - 0.725)
 
-
-/* NEEDS UPDATE */
-// in radius
-// in vec2 particle position
-int isWallCollision(ivec2 particle_coords, float radius){
-
-	if ( particle_coords.y > (540 + l(float(particle_coords.x)/192)*192) - radius ){
-		return 1;
-	}
-
-	return 0;
-
-}
-/* NEEDS UPDATE */
-// in vel particle
-// out new vel vector
-vec2 collision(ivec2 particle_coords, vec2 particle_velocity){
-
-	vec2 resultant = particle_velocity;
-
-	float radius = 25; // in pixels
-	if (isWallCollision(particle_coords, radius) == 1){
-	
-		float dydx = dldx(particle_coords.x);
-		vec2 normal = normalize(vec2(-1, dydx));
-
-		// r = d - 2(d dot n)n
-		resultant = particle_velocity - 2*dot(particle_velocity, normal) * normal;
-
-	}
-
-	return resultant;
-
-}
 
 int isWall(vec2 pos){
 
@@ -113,9 +83,14 @@ int isWall(vec2 pos){
 	return 0;
 }
 
-vec3 getColor(float v) {
+vec3 getColor(int posx, int posy, int id) {
 
-	float a = (1 - v) / 0.25;
+	float a;
+	if (id == 0){ // velocity
+		a = (1 - length(pressure[posx][posy].zw)) * 4;
+	}else if (id == 1){ // pressure
+		a = (.125 - abs(pressure[posx][posy].x)) * 32;
+	}
 
 	int colorCase = int(a);
 
@@ -182,7 +157,7 @@ void main(){
 			pixel.w -= 0.1;
 		
 		}else{
-			pixel.xyz = getColor(vel[posx][posy].x);
+			pixel.xyz = getColor(posx, posy, heatmap_toggle);
 			pixel.w = 0;
 
 		}
@@ -190,7 +165,6 @@ void main(){
 
 	}
 	
-	//pressure[posx][posy] = pixel;
 	imageStore(img_output, pixel_coords, pixel);
 
 }

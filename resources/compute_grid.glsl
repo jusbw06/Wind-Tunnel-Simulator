@@ -17,7 +17,6 @@ layout(local_size_x = 1, local_size_y = 1) in;
 
 #define PI 3.14159265
 #define MAX_SPHERE 100
-#define RADIUS 0.02
 
 layout (std430, binding=2) volatile buffer grid_data
 { 
@@ -35,7 +34,7 @@ layout (std430, binding=2) volatile buffer grid_data
 	vec4 temp[DIM_X];
 
 	vec4 spos[MAX_SPHERE];
-	vec4 svel[MAX_SPHERE];
+	float svel[MAX_SPHERE];
 
 };
 
@@ -46,11 +45,14 @@ layout(std430, binding = 3) volatile buffer sphere_data
 	vec2 accelerationSphere[MAX_SPHERE];
 	vec2 mouseVelocity;
 	vec2 mousePressure;
-	float drag[MAX_SPHERE];
 
 	int mouse_x;
 	int mouse_y;
 	int numSphere;
+	int temp_sphere;
+
+	ivec2 sphere_coords[MAX_SPHERE];
+	float dP[MAX_SPHERE];
 };
 
 uniform float dist;
@@ -150,7 +152,7 @@ vec2 getSpherePos(vec2 spherePos) {
 	return spherePos;
 }
 
-
+#define rho 1.225
 #define MASS_FLOW 1.0
 void main(){
 
@@ -187,15 +189,69 @@ void main(){
 
 	vel[posx][posy].xy = interpolate_velocity(vel_abs, posx, posy, width);
 
+	pressure[posx][posy].zw = vel[posx][posy].xy;
+
 	// dynamic pressure
 	// P = 1/2rhoV^2
-	pressure[posx][posy].x = 0.5 * 1 * vel[posx][posy].x * vel[posx][posy].x;
+	pressure[posx][posy].x = -0.5 * 1 * vel[posx][posy].x * vel[posx][posy].x;
 
 
 	if (posy == 540 && posx < numSphere) {
 		vec2 spherePos = getSpherePos(positionSphere[posx].xy);
 		accelerationSphere[posx] = vel[int(spherePos.x)][int(spherePos.y)].xy / positionSphere[posx].z * 1.5;
+
 	}
 
+
+
+
+	for (int i = 0; i < num_sphere; i++){
+
+		//ivec2 sphere_coords[];
+		//vec2 dP[];
+
+
+		/* Source & Sink Positions */
+		vec2 sphere_pos = vec2(sphere_coords[i]);
+		sphere_pos /= XY_SCALE;
+		sphere_pos.y -= float(RESY) / 2 / 192; // in real world coordinates
+
+		float radius = positionSphere[i].z * 0.02 * 800 / 192; // in real world coordinates
+
+
+		vec2 velocity = vel[sphere_coords[i].x][sphere_coords[i].y].xy;
+
+		vec2 front = sphere_pos - vec2(normalize(velocity) * radius);
+		vec2 rear = sphere_pos + vec2(normalize(velocity) * radius);
+
+		float temp = velocity.x;
+		velocity.x = velocity.y;
+		velocity.y = temp;
+
+		vec2 top = sphere_pos + vec2(normalize(velocity) * radius);
+		vec2 bot = sphere_pos - vec2(normalize(velocity) * radius);
+
+
+		// Rear
+		//pressure[posx][posy].x -= dP[i] * 1 / pow( distance(pos[posx][posy].xy,rear) + 1, 3);
+		pressure[posx][posy].x -= 0.25 * 1 / pow( distance(pos[posx][posy].xy,rear) + 1, 3);
+
+
+		// Front
+		//pressure[posx][posy].x += 1/2 * rho * pow(  length(vel[sphere_coords[i].x][sphere_coords[i].y].xy ) , 2) * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 2);
+		//vel[posx][posy].xy -= vel[sphere_coords[i].x][sphere_coords[i].y].xy * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 2);
+
+		pressure[posx][posy].x += abs(pressure[posx][posy].x) * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 2.5);
+		pressure[posx][posy].zw  -= pressure[posx][posy].zw  * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 3);
+
+		//top
+		//pressure[posx][posy].zw  += velocity*2  * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 4);
+
+		//bottom
+		//pressure[posx][posy].zw  += velocity*2  * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 4);
+
+
+
+	}
 
 }

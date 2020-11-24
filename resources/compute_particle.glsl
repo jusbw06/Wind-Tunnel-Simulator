@@ -49,15 +49,19 @@ layout(std430, binding = 3) volatile buffer sphere_data
 	vec2 accelerationSphere[MAX_SPHERE];
 	vec2 mouseVelocity;
 	vec2 mousePressure;
-	float drag[MAX_SPHERE];
 
 	int mouse_x;
 	int mouse_y;
 	int numSphere;
+	int temp_sphere;
+
+	ivec2 sphere_coords[MAX_SPHERE];
+	float dP[MAX_SPHERE];
 };
 
 uniform float dist;
 uniform int num_sphere;
+uniform int display_arrows;
 
 
 float l(float x) {
@@ -86,27 +90,17 @@ int isWall(vec2 pos){
 
 void addArrows(ivec2 pixel_coords, vec2 vel_slope){
 
-	//ivec2 arrow_pixel_offset[8] = {ivec2(-2,0),ivec2(-1,0),ivec2(0,0),ivec2(1,0),ivec2(2,0),ivec2(2,1),ivec2(3,0),ivec2(2,-1)}; 
-	//ivec2 arrow_pixel_offset[8] = {ivec2(-2,0),ivec2(-1,0),ivec2(0,0),ivec2(1,0),ivec2(2,0),ivec2(2,1),ivec2(3,0),ivec2(2,-1)}; 
-	//ivec2 arrow_pos[8];
-	//for (int i = 0; i < 8; i++){
-	//	arrow_pos[i] = ivec2(arrow_pixel_offset[i] * normalize(vel_slope) ) * 5 + pixel_coords;
-	//	imageStore(img_output, arrow_pos[i], vec4(0,0,0,0));
-	//}
 
 	for (int i = 0; i < 20; i++){
 		ivec2 arrow_pos = ivec2(pixel_coords + normalize(vel_slope) * i); 
 		imageStore(img_output, arrow_pos, vec4(0,0,0,0));
 	}
 
-
-
 	imageStore(img_output, pixel_coords, vec4(1,1,1,0));
 	imageStore(img_output, pixel_coords + ivec2(1,0), vec4(1,1,1,0));
 	imageStore(img_output, pixel_coords + ivec2(-1,0), vec4(1,1,1,0));
 	imageStore(img_output, pixel_coords + ivec2(0,1), vec4(1,1,1,0));
 	imageStore(img_output, pixel_coords + ivec2(0,-1), vec4(1,1,1,0));
-
 
 }
 
@@ -201,7 +195,7 @@ void main(){
 	int posx = pixel_coords.x; // addressable to pixel, may need change
 	int posy = pixel_coords.y; // if grid coords are diff from RES
 
-	if (posx % 50 == 0 && posy % 50 == 0 && isWall( pos[posx][posy].xy ) != 1){
+	if (display_arrows == 1 && posx % 50 == 0 && posy % 50 == 0 && isWall( pos[posx][posy].xy ) != 1){
 		addArrows(pixel_coords, vel[posx][posy].xy);
 	}
 
@@ -226,20 +220,6 @@ void main(){
 		//velocitySphere[index].xy = vec2(0, 0);
 		velocitySphere[index].xy = performWallCollision(sphere_pos, radius, velocitySphere[index].xy, index);
 	}
-
-
-	// sphere-sphere collision
-	//for (int i = 0; i < numSphere; i++) {
-	//	if (i != index && isCollide(positionSphere[i], positionSphere[index])) {
-	//		vec4 a = vec4(vec2(positionSphere[index].xy - positionSphere[i].xy), 0, 0);
-	//		vec4 b = vec4(vec2(positionSphere[i].xy - positionSphere[index].xy), 0, 0);
-
-	//		velocitySphere[index].xy += projectUonV(vec4(velocitySphere[i], 0, 0), a).xy / positionSphere[index].z * VMUL;
-	//		velocitySphere[index].xy -= projectUonV(vec4(velocitySphere[index], 0, 0), b).xy / positionSphere[index].z * VMUL;
-
-	//		separate(index, i);
-	//	}
-	//}
 
 
 }

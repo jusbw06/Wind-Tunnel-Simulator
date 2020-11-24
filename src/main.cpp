@@ -36,6 +36,10 @@ std::vector<unsigned char> buffer(RESX * RESY * 4);
 std::vector<unsigned char> buffer2(RESX * RESY * 4);
 
 GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram, computeStreamProgram;
+GLint heatmap_toggle = 1;
+GLint display_particles = 1;
+GLint display_arrows = 1;
+
 
 #define NUM_SPHERE 100
 #define MAX_SPHERE 100
@@ -73,11 +77,14 @@ public:
 	vec2 accelerationSphere[MAX_SPHERE];
 	vec2 mouseVelocity;
 	vec2 mousePressure;
-	float drag[MAX_SPHERE];
 
 	int mouse_x;
 	int mouse_y;
 	int numSphere;
+	int temp_sphere;
+
+	ivec2 sphere_coords[MAX_SPHERE];
+	float dP[MAX_SPHERE];
 };
 
 double get_last_elapsed_time()
@@ -182,6 +189,24 @@ public:
 			distanceCPU -= 0.1;
 		}
 		
+		
+		if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+		{
+			heatmap_toggle = !heatmap_toggle;
+		}
+
+		if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+		{
+			display_particles = !display_particles;
+		}
+		if (key == GLFW_KEY_3 && action == GLFW_PRESS)
+		{
+			display_arrows = !display_arrows;
+		}
+
+
+
+
 	}
 
 	// callback for the mouse when clicked move the triangle when helper functions
@@ -537,10 +562,12 @@ public:
 			static bool flap = 1;
 
 			/* Copy from CPU to GPU */
-			/*glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			/*
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
 			GLvoid* p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
 			memcpy(p, &ssbo, sizeof(ssbo_data));
-			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);*/
+			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+			*/
 
 
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
@@ -564,17 +591,21 @@ public:
 			glUniform1f(uniformVarLoc, distanceCPU);
 			uniformVarLoc = glGetUniformLocation(computeHeatMapProgram, "num_sphere");
 			glUniform1i(uniformVarLoc, num_sphere);
+			uniformVarLoc = glGetUniformLocation(computeHeatMapProgram, "heatmap_toggle");
+			glUniform1i(uniformVarLoc, heatmap_toggle);
 			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-
+			
 			/* shader 3 */
 			glUseProgram(computeParticleProgram);
 			uniformVarLoc = glGetUniformLocation(computeParticleProgram, "dist");
 			glUniform1f(uniformVarLoc, distanceCPU);
 			uniformVarLoc = glGetUniformLocation(computeParticleProgram, "num_sphere");
 			glUniform1i(uniformVarLoc, num_sphere);
+			uniformVarLoc = glGetUniformLocation(computeParticleProgram, "display_arrows");
+			glUniform1i(uniformVarLoc, display_arrows);
 			glDispatchCompute((GLuint)tex_w, (GLuint)tex_h, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
@@ -588,18 +619,35 @@ public:
 			glUniform1i(uniformVarLoc, num_sphere);
 			uniformVarLoc = glGetUniformLocation(computeStreamProgram, "frame_num");
 			glUniform1i(uniformVarLoc, frame_num);
+			uniformVarLoc = glGetUniformLocation(computeStreamProgram, "display_particles");
+			glUniform1i(uniformVarLoc, display_particles);
 			glDispatchCompute((GLuint)256, (GLuint)1, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
 			/* Copy from GPU to CPU */
-			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-			//p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-			//memcpy(&ssbo, p, sizeof(ssbo_data));
-			//glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-			//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+			/*
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
+			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+			memcpy(&ssbo, p, sizeof(ssbo_data));
+			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+			
+			float max_val = 0;
+			for (int i = 0; i < 1920; i++) {
 
+				for (int j = 0; j < 1080; j++) {
+
+					if (abs(ssbo.pressure[i][j].x) > abs(max_val)) {
+						max_val = ssbo.pressure[i][j].x;
+					}
+
+				}
+
+			}
+			cout << "P: " << max_val << endl;
+			*/
 
 			// Copy data from GPU to CPU
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
@@ -689,8 +737,10 @@ public:
 		return glm::length(delta) < RADIUS * v1.z + RADIUS * v2.z;
 	}
 
+#define PI 3.1415926
+#define rho 1.225f
 	float getDrag(int idx) {
-		float radius = ssbo_sphere.positionSphere[idx].z * RADIUS;
+		float radius = ssbo_sphere.positionSphere[idx].z * RADIUS *800.0f/192.0f;
 
 		float Re = length(ssbo_sphere.velocitySphere[idx]) * 1.225 * 2.0f * radius / 1.789e-5;
 		float Cd;
@@ -700,10 +750,11 @@ public:
 		else
 			Cd = 21.12f / Re + 6.3f / sqrt(Re) + 0.25f;
 
-		float D = Cd * 0.5f * 1.225f * pow(length(ssbo_sphere.velocitySphere[idx]), 2) * 3.1415926 * radius * radius;
+		float D = Cd * 0.5f * rho * pow(length(ssbo_sphere.velocitySphere[idx]), 2) * PI * radius * radius;
 
 		return D;
 	}
+
 
 	void update(int i, float delta_t) {
 	//	ssbo.spos[i].x += ssbo.svel[i].x * delta_t;
@@ -719,7 +770,23 @@ public:
 		ssbo_sphere.positionSphere[i].x += ssbo_sphere.velocitySphere[i].x * delta_t;
 		ssbo_sphere.positionSphere[i].y += ssbo_sphere.velocitySphere[i].y * delta_t;
 
-		ssbo_sphere.drag[i] = getDrag(i);
+
+
+
+
+		/* Source & Sink */
+
+		//ivec2 sphere_coords[];
+		//float dP[];
+
+		/* Convert sphere position pixel coordinates */
+		ssbo_sphere.sphere_coords[i] = ivec2((ssbo_sphere.positionSphere[i].x + 1) / 2.0 * RESX, (ssbo_sphere.positionSphere[i].y + 1) / 2.0 * RESY);
+
+
+		float radius = ssbo_sphere.positionSphere[i].z * RADIUS * 800.0f / 192.0f;
+		ssbo_sphere.dP[i] = getDrag(i) / (radius * radius * PI);
+		//cout << ssbo_sphere.dP[i] << endl;
+		
 	}
 
 	//*****************************************************************************************
