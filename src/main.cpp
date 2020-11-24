@@ -181,11 +181,11 @@ public:
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
 
-		if (key == GLFW_KEY_UP && action == GLFW_PRESS)
+		if ((key == GLFW_KEY_UP || key == GLFW_KEY_W) && action == GLFW_PRESS)
 		{
 			distanceCPU += 0.1;
 		}
-		if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
+		if ((key == GLFW_KEY_UP || key == GLFW_KEY_S) && action == GLFW_PRESS)
 		{
 			distanceCPU -= 0.1;
 		}
