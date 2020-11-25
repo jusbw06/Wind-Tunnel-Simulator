@@ -40,6 +40,7 @@ GLuint computeGridProgram, computeHeatMapProgram, computeParticleProgram, comput
 GLint heatmap_toggle = 1;
 GLint display_particles = 1;
 GLint display_arrows = 1;
+GLint source_sink_toggle = 1;
 
 
 #define NUM_SPHERE 100
@@ -204,7 +205,10 @@ public:
 		{
 			display_arrows = !display_arrows;
 		}
-
+		if (key == GLFW_KEY_4 && action == GLFW_PRESS)
+		{
+			source_sink_toggle = !source_sink_toggle;
+		}
 
 
 
@@ -586,6 +590,8 @@ public:
 			glUniform1f(uniformVarLoc, distanceCPU);
 			uniformVarLoc = glGetUniformLocation(computeGridProgram, "num_sphere");
 			glUniform1i(uniformVarLoc, num_sphere);
+			uniformVarLoc = glGetUniformLocation(computeGridProgram, "source_sink_toggle");
+			glUniform1i(uniformVarLoc, source_sink_toggle);
 			glDispatchCompute( (GLuint)1920, (GLuint)1080, 1);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 

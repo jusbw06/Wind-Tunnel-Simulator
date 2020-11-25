@@ -57,6 +57,7 @@ layout(std430, binding = 3) volatile buffer sphere_data
 
 uniform float dist;
 uniform int num_sphere;
+uniform int source_sink_toggle;
 
 
 // 10m scale
@@ -171,7 +172,7 @@ void main(){
 
 
 
-	for (int i = 0; i < num_sphere; i++){
+	for (int i = 0; i < num_sphere && source_sink_toggle > 0; i++){
 
 		//ivec2 sphere_coords[];
 		//vec2 dP[];
