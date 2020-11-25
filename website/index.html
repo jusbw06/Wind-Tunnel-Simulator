@@ -222,7 +222,7 @@
                 <h2>Navier-Stokes: Continuity Equation</h2>
                 <img src="images/Continuity Equation.png"/>
 
-                <p>Used to derive the average velocity of the fluid flow in the x-direction at every pixel. M_dot or the mass flow rate is a constant predefined. From this, we can divide by the cross sectional area to receive the average x-velocity at a particular x-location.</p>
+                <p>Used to derive the average velocity of the fluid flow in the x-direction at every pixel. M_dot or the mass flow rate is a predefined constant. From this, we can divide by the cross sectional area to receive the average x-velocity at a particular x-location.</p>
             </td>
             <td style="text-align:center;vertical-align:top">
                 <h2>Source & Sink Flow</h2>
@@ -230,6 +230,21 @@
 
                 <p>A pressure source was used to simulate the pressure rise at the front of the ball due to the onset of oncoming air. A presssure sink was used to simulate the pressure drop across each sphere as they moved through the air. Finally, a velocity sink was 
                 implemented in the front of the ball to simulate the stagnation of air at the very front of the sphere. The shape of the sources and sinks were altered using alternate distance functions. The distance function for a simple circular source or sink is shown above.</p>
+            </td>
+
+        </tr>
+        <tr>            
+            <td style="text-align:center;vertical-align:top">
+                <h2>Velocity Interpolation</h2>
+                <img src="images/Interpolation.png"/>
+
+                <p>Used to adapt the 1D average velocity vector to 2D in order to adjust the flow to the shape of the tunnel's upper boundary. The vector [1, m] is a vector tangent to the tunnel's upper boundary at some particular x location.</p>
+            </td>
+            <td style="text-align:center;vertical-align:top">
+                <h2>Pressure Drop Across Sphere</h2>
+                <img src="images/Pressure Drop.png"/>
+
+                <p>Before implementing the pressure drop in the source/sink flow, the pressure drop across the sphere was estimated to give a more realistic values.</p>
             </td>
 
         </tr>
@@ -246,7 +261,10 @@
 
     <h3>References</h3>
     <ul>
-        <li></li>
+        <li><a href="https://www.grc.nasa.gov/www/k-12/airplane/nseqs.html">Navier-Stokes: NASA</a></li>
+        <li><a href="https://www.grc.nasa.gov/www/k-12/airplane/dragsphere.html">Drag of a Sphere: NASA</a></li>
+        <li><a href="">example</a></li>
+        <li><a href="">example</a></li>
     </ul>
    
     </div>
