@@ -195,6 +195,8 @@ public:
 		if (key == GLFW_KEY_1 && action == GLFW_PRESS)
 		{
 			heatmap_toggle = !heatmap_toggle;
+			char* s = heatmap_toggle == 0 ? "velocity" : "pressure";
+			cout << "Now viewing " << s << " heat map" << endl;
 		}
 
 		if (key == GLFW_KEY_2 && action == GLFW_PRESS)
@@ -225,12 +227,19 @@ public:
 		glfwGetCursorPos(window, &posX, &posY);
 
 		mousepressed = false;
-		if (action == GLFW_PRESS)
+		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
 			mousepressed = true;
 
 			mouse_current_x = posX;
 			mouse_current_y = posY;
+
+			ssbo_sphere.mouse_x = posX;
+			ssbo_sphere.mouse_y = posY;
+
+		}
+		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_RIGHT)
+		{
 
 			ssbo.spos[num_sphere].x = posX / RESX * 2.0f - 1.0f;
 			ssbo.spos[num_sphere].y = -1 * (posY / RESY * 2.0f - 1.0f);
@@ -242,8 +251,6 @@ public:
 			ssbo_sphere.numSphere += 1;
 			ssbo_sphere.mouse_x = posX;
 			ssbo_sphere.mouse_y = posY;
-
-		//	cout << ssbo_sphere.numSphere << endl;
 
 		}
 	}
@@ -636,28 +643,6 @@ public:
 			glBindImageTexture(!flap, CS_tex_A, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 			glBindImageTexture(flap, CS_tex_B, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-			/* Copy from GPU to CPU */
-			/*
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_GPU_id);
-			p = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
-			memcpy(&ssbo, p, sizeof(ssbo_data));
-			glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-			
-			float max_val = 0;
-			for (int i = 0; i < 1920; i++) {
-
-				for (int j = 0; j < 1080; j++) {
-
-					if (abs(ssbo.pressure[i][j].x) > abs(max_val)) {
-						max_val = ssbo.pressure[i][j].x;
-					}
-
-				}
-
-			}
-			cout << "P: " << max_val << endl;
-			*/
 
 			// Copy data from GPU to CPU
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_sphere_GPU_id);
@@ -785,8 +770,6 @@ public:
 	}
 
 	void update(int i, float delta_t) {
-
-		cout << num_sphere << endl;
 
 		if (outOfScreen(i)) {
 			removeSphere(i);

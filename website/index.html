@@ -51,6 +51,9 @@
     p {
         font-family: "Source Sans Pro", Helvetica;
     }
+    li {
+        font-family: "Source Sans Pro", Helvetica;
+    }
 
 </style> 
 
@@ -64,7 +67,15 @@
         <h1 align="middle">Wind Tunnel Simulation</h1>
         <div class="padded">
             <h2 align="middle">Justin Wheeler, Sherry Lin, Nathan Irwin</h2>
-            <p>For the final project, we created a wind tunnel simulation. Particles can be spawn with mouse clicks. The size of the tunnel can be adjusted with mouse wheel scrolls.</p>
+            <div class="padded">
+                <p>For the final project, we created a wind tunnel simulation to model the effects of a fluid passing through a tighter area.
+                    The wind tunnel consists primarily of a 2 dimensional grid of pressure and velocity for each pixel. The pressure and velocity
+                    are mapped to a rgb color scale with blue being low values and red being higher. The user can interact with the simulation by
+                    using arrow keys to increase or decrease the width of the tunnel. The effects of this smaller area can be seen in both the
+                    pressure and velocity maps. Clicking on the simulation can be used to see the velocity and pressure at that location and to spawn
+                    particles.
+                </p>
+            </div>
         </div>
     </header>
     
@@ -73,18 +84,19 @@
         
  
     <h2 align="middle">Overview of the Wind Tunnel</h2>
-        <p> stuff </p>
+        <div class="padded">
+            <p>Here is a video showing the simulation. The velocity map shows shows the magnitude of the air velocity at that pixel location. Half way through, 
+                we switch from a velocity map to a pressure map. This represents the difference in pressure from the surrounding static pressure where red is
+                the lowest pressure in comparison to the surroundings.
+            </p>
+        </div>
         <div align="center">
             <table style="width=100%">
                 <tr>
                     <td align="middle">
-                    <img src="images/5-1.png" />
-                    <figcaption align="middle">a bird's eye view</figcaption>
-
-                
                 
                 <video controls>
-                    <source src="video/video.mp4" type="video/mp4">
+                    <source src="video/main.mp4" type="video/mp4">
                 
                 
                 </video>
@@ -92,38 +104,18 @@
                 </tr>
              </table>
         </div>
-
-    <h2 align="middle">Section 1</h2>
-        <p>stuff</p>
-        <div align="center">
-            <table style="width=100% height=auto">
-                <tr>
-                    <td align="middle">
-                    <img src="images/1-1.png" width="800px" />
-                    <figcaption align="middle"></figcaption>
-
-                    <td align="middle">
-                    <img src="images/1-2.png" width="800px" />
-                    <figcaption align="middle"></figcaption>
-
-
-                </tr>
-            </table>
-        </div>
-
-
-    <h2 align="middle">Section 2</h2>
-    <p>stuff</p>
-
-    <div align="center">
-            <table style="width=100%">
-                <tr>
-                    <td align="middle">
-                    <img src="images/2-1.png"/>
-                    <figcaption align="middle">caption_holder</figcaption>
-
-                </tr>
-            </table>
+        <div class="padded">
+            <p>The controls for this simulation are as follows:</p>
+            <ul>
+                <li>W: Decrease distance beween boundary</li>
+                <li>S: Increase distance between boundary</li>
+                <li>Left mouse button: Print pressure and velocity out to console at that location</li>
+                <li>Right mouse button: Spawn particle</li>
+                <li>1: Switch between pressure and velocity heatmaps</li>
+                <li>2: Toggle stream lines</li>
+                <li>3: Toggle directional indicators</li>
+                <li>4: Toggle effects of particles on surrounding air</li>
+            </ul>
         </div>
 
 
