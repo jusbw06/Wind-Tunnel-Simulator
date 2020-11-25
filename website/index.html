@@ -48,6 +48,10 @@
         background-size: 100%;
     }
 
+    p {
+        font-family: "Source Sans Pro", Helvetica;
+    }
+
 </style> 
 
 <title>CSC 572 Final Project</title>
@@ -136,31 +140,29 @@
     
     <h3 align="middle">N-Body Collision</h3>
 
-    <p></p>
+    <p>We implemented n-body collision to for particles (spheres in 2D).</p>
+    <p>The algorithm follows the procedure below: </p>
+     <ol>
+         <li>Get all distinct intersecting pairs from the list of particles</li>
+         <li>For each pair, applying the constraints from conservation of momentum and conservation of kinetic energy. Final velocities in each pair can be solved with the following derived equations
+            <br\>
+            <img src="images/n-body.PNG" style="width: 50%; height: auto;">
+         </li>
+         <li>Repeat the process for the number of pairs times</li>
+     </ol>
 
-        <div align="center">
+    <p>Results: </p>
+    <div align="center">
+        
+        <video controls>
+            <source src="video/3-body.mp4" type="video/mp4">
+        </video>
 
-            <video controls>
-                <source src="video/3-body.mp4" type="video/mp4">
-            </video>
-
-            <video controls>
-                <source src="video/4-body.mp4" type="video/mp4">
-            </video>
-
-            <table style="width=100%">
-                <tr>
-                    <td align="middle">
-                    <img src="images/3-1.png"/>
-                    <figcaption align="middle">caption_holder</figcaption>
-
-                    <td align="middle">
-                    <img src="images/3-2.png"/>
-                    <figcaption align="middle">caption_holder</figcaption>
-                </tr>
-                
-            </table>
-        </div>
+        <video controls>
+            <source src="video/4-body.mp4" type="video/mp4">
+        </video>
+        
+    </div>
 
 
     <div align="center">
