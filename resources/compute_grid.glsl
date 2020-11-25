@@ -201,15 +201,19 @@ void main(){
 
 		// Rear
 		//pressure[posx][posy].x -= dP[i] * 1 / pow( distance(pos[posx][posy].xy,rear) + 1, 3);
-		pressure[posx][posy].x -= 0.25 * 1 / pow( distance(pos[posx][posy].xy,rear) + 1, 3);
+
+		float dist = sqrt(pow(abs(pos[posx][posy].x - rear.x), 2) + pow(abs(pos[posx][posy].y - rear.y) * 2, 2));
+		pressure[posx][posy].x -= 0.25 * 0.1 / pow(dist + 1, 6);
 
 
 		// Front
 		//pressure[posx][posy].x += 1/2 * rho * pow(  length(vel[sphere_coords[i].x][sphere_coords[i].y].xy ) , 2) * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 2);
 		//vel[posx][posy].xy -= vel[sphere_coords[i].x][sphere_coords[i].y].xy * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 2);
 
-		pressure[posx][posy].x += abs(pressure[posx][posy].x) * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 2.5);
-		pressure[posx][posy].zw  -= pressure[posx][posy].zw  * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 3);
+		dist = sqrt(pow(abs(pos[posx][posy].x - front.x) * 2, 2) + pow(abs(pos[posx][posy].y - front.y), 2));
+
+		pressure[posx][posy].x += abs(pressure[posx][posy].x) * 1 / pow(dist + 1, 6);
+		pressure[posx][posy].zw -= pressure[posx][posy].zw * 1 / pow(dist + 1, 6);
 
 		//top
 		//pressure[posx][posy].zw  += velocity*2  * 1 / pow( distance(pos[posx][posy].xy,front) + 1, 4);

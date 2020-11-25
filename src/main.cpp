@@ -858,7 +858,6 @@ public:
 		float frametime = get_last_elapsed_time();
 
 		for (int i = 0; i < num_sphere; i++) {
-			update(i, frametime);
 
 			//vec3 pos = ssbo.spos[i];
 			vec3 pos = vec3(ssbo_sphere.positionSphere[i].x, ssbo_sphere.positionSphere[i].y, 0);
@@ -871,6 +870,8 @@ public:
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, SphereTexture);
 			sphere->draw(prog, FALSE);
+
+			update(i, frametime);
 			
 		}
 
